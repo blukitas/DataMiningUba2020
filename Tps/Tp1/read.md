@@ -1,0 +1,112 @@
+# Tp 1:
+
+Origen del dataset: https://www.kaggle.com/ophi/mpi
+Es un programa que lleva adelante "Oxford Poverty & Human Development Initiative (OPHI)" que forma parte del departamento de desarrollo internacional, de la universidad de Oxford, UK.
+
+Se trata de pobreza. Ellos encaran el problema con un enfoque diferente, medir la pobreza no solo desde su condición monetaria, sino que integran información multidimensional de varias áreas: Educación, Niñez, Salud, Empleo y Vivienda.
+
+
+## Columnas del data set:
+* "ISO.country.code"_: Codigo estándar, de tres letras, del país
+* "Country"_: País
+* "Sub.national.region"_: Algo así como provincia
+* "World.region"_: Subregión a nivel mundial. No necesariamente coinciden con los paises o los continentes. Las distintas regiones son:
+	* Arab States                 
+	* East Asia and the Pacific   
+	* Europe and Central Asia  
+	* Latin America and Caribbean
+	* South Asia                  
+	* Sub-Saharan Africa          
+* _"MPI.National"_: Índice multidimensional de pobreza del país    
+* _"MPI.Regional"_: Índice multidimensional de pobreza de la región
+* _"Headcount.Ratio.Regional"_: Porcentaje de la población considerada pobre en la región
+* _"Intensity.of.deprivation.Regional"_: Distancia promedio de aquellos listados como pobres de la linea de pobreza.
+	* Calculated based on data on household deprivations in education, health and living standards from ICF Macro Demographic and Health Surveys, United Nations Children's Fund Multiple Indicator Cluster Surveys and some national household surveys.
+
+## Columnas y tipos de datos:
+'data.frame':	984 obs. of  8 variables:
+ $ ISO.country.code                 : **Factor** w/ 78 levels "AFG","BDI","BEN",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ Country                          : **Factor** w/ 78 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ Sub.national.region              : **Factor** w/ 928 levels "Ã°ncash","Ã°quateur",..: 66 67 70 76 80 237 299 301 314 315 ...
+ $ World.region                     : **Factor** w/ 6 levels "Arab States",..: 5 5 5 5 5 5 5 5 5 5 ...
+ $ MPI.National                     : **num**  0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 ...
+ $ MPI.Regional                     : **num**  0.387 0.466 0.3 0.301 0.325 0.313 0.319 0.25 0.245 0.384 ...
+ $ Headcount.Ratio.Regional         : **num**  67.5 79.3 59.7 55.7 61 65.1 61.4 49.4 47.4 74.6 ...
+ $ Intensity.of.deprivation.Regional: **num**  57.3 58.8 50.3 54.1 53.3 48.1 52 50.6 51.6 51.5 ...
+ 
+## Estadísticos de columnas numéricas:
+|  MPI.National  |   MPI.Regional   |  Headcount.Ratio.Regional  |  Intensity.of.deprivation.Regional |
+|----------------|:----------------:|:--------------------------:|-----------------------------------:|
+| Min.   :0.0060 |  Min.   :0.0000  |  Min.   : 0.00             |  Min.   :33.30                     |
+| 1st Qu.:0.0660 |  1st Qu.:0.0530  |  1st Qu.:12.47             |  1st Qu.:41.40                     |
+| Median :0.1740 |  Median :0.1550  |  Median :33.95             |  Median :45.60                     |
+| Mean   :0.2041 |  Mean   :0.2113  |  Mean   :40.18             |  Mean   :47.18                     |
+| 3rd Qu.:0.3030 |  3rd Qu.:0.3415  |  3rd Qu.:66.72             |  3rd Qu.:51.90                     |
+| Max.   :0.6050 |  Max.   :0.7440  |  Max.   :99.00             |  Max.   :75.90                     |
+                                                            NA's   :1     
+															
+## Cantidad de registros por región
+
+1 Arab States                   115
+2 East Asia and the Pacific     128
+3 Europe and Central Asia        11
+4 Latin America and Caribbean   218
+5 South Asia                     81
+6 Sub-Saharan Africa            431
+
+La cantidad de información de europa y asia central es muy pequeña en comparación con las otras regiones. Los paises dentro del dataframe son dos: 
+* Tajikistan
+* Uzbekistan
+
+## Cantidad de países por región
+1 Arab States                     8
+2 East Asia and the Pacific       9
+3 Europe and Central Asia         2
+4 Latin America and Caribbean    16
+5 South Asia                      5
+6 Sub-Saharan Africa             38
+
+Algo que podemos ver, indagando más es que la cantidad de países por región es mayor en el África subsahariana que en el resto de las regiones, el doble que Latinoamerica y el caribe, y 15 veces más que el Este de asia y el pacífico.
+
+## Medidas de posición
+
+### Mediana
+
+                 World.region MPI.National.Med MPI.Regional.Med Headcount.Ratio.Regional.Med   Intensity.of.deprivation.Regional.Med
+1                 Arab States            0.045           0.0520                        12.50                                  40.6
+2   East Asia and the Pacific            0.100           0.0995                        23.00                                  44.7
+3     Europe and Central Asia            0.008           0.0160                         4.10                                  36.0
+4 Latin America and Caribbean            0.034           0.0375                         8.95                                  41.4
+5                  South Asia            0.196           0.1990                        45.20                                  46.6
+6          Sub-Saharan Africa            0.307           0.3330                        66.60                                  50.4
+
+### Media
+
+                 World.region MPI.National.Media MPI.Regional.Media Headcount.Ratio.Regional.Media Intensity.of.deprivation.Regional.Media
+1                 Arab States         0.11078261         0.11528696                      23.106957                                42.65391
+2   East Asia and the Pacific         0.12432812         0.13626563                      28.294531                                45.60156
+3     Europe and Central Asia         0.02890909         0.02527273                       6.427273                                37.08182
+4 Latin America and Caribbean         0.05427064         0.06366514                      14.233028                                41.53871
+5                  South Asia         0.20904938         0.21962963                      44.118519                                47.63951
+6          Sub-Saharan Africa         0.33203016         0.33712761                      61.520650                                51.87030
+
+### Moda
+
+
+                 World.region MPI.National.Moda MPI.Regional.Moda Headcount.Ratio.Regional.Moda Intensity.of.deprivation.Regional.Moda
+1                 Arab States             0.014             0.006                           2.2                                   40.6
+2   East Asia and the Pacific             0.066             0.053                          13.4                                   44.3
+3     Europe and Central Asia             0.008             0.021                           6.1                                   34.5
+4 Latin America and Caribbean             0.072             0.030                           1.4                                   41.6
+5                  South Asia             0.295             0.294                          65.1                                   50.3
+6          Sub-Saharan Africa             0.303             0.292                          72.0                                   47.3
+
+### Correlación entre variables numericas
+
+                                  MPI.National MPI.Regional Headcount.Ratio.Regional Intensity.of.deprivation.Regional
+MPI.National                         1.0000000    0.8589756                0.8554401                         0.8136333
+MPI.Regional                         0.8589756    1.0000000                0.9839708                         0.9446785
+Headcount.Ratio.Regional             0.8554401    0.9839708                1.0000000                         0.9029842
+Intensity.of.deprivation.Regional    0.8136333    0.9446785                0.9029842                         1.0000000
+
+	
