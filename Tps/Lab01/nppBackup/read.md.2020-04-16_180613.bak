@@ -1,0 +1,33 @@
+# Tp 1:
+
+Se trata de pobreza. Solo que ellos tienen un enfoque diferente, medir la pobreza no solo desde su condición monetaria. Integran información multidimensional de varias áreas: Educación, Niñez, Salud, Empleo y Vivienda.
+
+Es un programa que lleva adelante "Oxford Poverty & Human Development Initiative (OPHI)" que forma parte del departamento de desarrollo internacional, de la universidad de Oxford, UK.
+
+## Columnas del data set:
+* "ISO.country.code"_: Codigo estándar del país
+* "Country"_: País
+* "Sub.national.region"_: Algo así como provincia
+* "World.region"_: Subregión a nivel mundial. No necesariamente coinciden con los paises, pero más o menos. Las distintas regiones son:
+	* Arab States                 
+	* East Asia and the Pacific   
+	* Europe and Central Asia  
+	* Latin America and Caribbean
+	* South Asia                  
+	* Sub-Saharan Africa          
+* _"MPI.National"_: Índice multidimensional de pobreza del país    
+* _"MPI.Regional"_: Índice multidimensional de pobreza de la región
+* _"Headcount.Ratio.Regional"_: Porcentaje de la población considerada pobre en la región
+* _"Intensity.of.deprivation.Regional"_: Distancia promedio de aquellos listados como pobres de la linea de pobreza.
+
+## Columnas y tipos de datos:
+'data.frame':	984 obs. of  8 variables:
+ $ ISO.country.code                 : **Factor** w/ 78 levels "AFG","BDI","BEN",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ Country                          : **Factor** w/ 78 levels "Afghanistan",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ Sub.national.region              : **Factor** w/ 928 levels "Ã°ncash","Ã°quateur",..: 66 67 70 76 80 237 299 301 314 315 ...
+ $ World.region                     : **Factor** w/ 6 levels "Arab States",..: 5 5 5 5 5 5 5 5 5 5 ...
+ $ MPI.National                     : **num**  0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 0.295 ...
+ $ MPI.Regional                     : **num**  0.387 0.466 0.3 0.301 0.325 0.313 0.319 0.25 0.245 0.384 ...
+ $ Headcount.Ratio.Regional         : **num**  67.5 79.3 59.7 55.7 61 65.1 61.4 49.4 47.4 74.6 ...
+ $ Intensity.of.deprivation.Regional: **num**  57.3 58.8 50.3 54.1 53.3 48.1 52 50.6 51.6 51.5 ...
+ 

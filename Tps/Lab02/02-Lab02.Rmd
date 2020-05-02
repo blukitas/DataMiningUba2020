@@ -1,0 +1,310 @@
+---
+title: "Lab 02"
+output: html_notebook
+---
+
+# R Markdown - http://rmarkdown.rstudio.com
+
+# Solucion Laboratorio 2:
+
+Importando libreria
+```{r}
+library("ggplot2");
+library("readr");
+library("dplyr");
+library("highcharter");
+library("treemap"); # Gráfico treemap
+library("modeest"); # Moda estimada
+library("GGally");
+library("infotheo"); # Discretize variable
+library("sqldf"); # SQL para data frames
+library("MASS"); # Chi2 en variables cualitativas
+```
+
+Leer CSV's
+```{r}
+sn <- read.csv("C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab02\\MPI_subnational.csv")
+n <- read.csv("C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab02\\MPI_national.csv")
+```
+
+## Primera impresión de ambos dataset
+
+Subnational
+```{r}
+str(sn)
+```
+
+National
+
+```{r}
+str(n)
+```
+
+### Primeras observaciones
+* Disparidad en la cantidad de registros. 
+* Columnas coincidentes: ISO - ISO.country.code, Country - Country
+* Subnational muestra la información de cada provincia de una forma general.
+* National muestra para cada pais información de pobreza en area rural y urbana.
+* Continua habiendo un solo dato nulo.
+
+### Paises en ambos datasets
+
+* Hay diferencias en los países de ambos datasets. MPI national tiene 102 países y MPI subnational tiene 78. 
+
+```{r}
+# Cantidad de países únicos.
+# length(unique(n$Country)) 
+# length(unique(sn$Country))
+# Nombre de los países que no están en ambos datasets.
+setdiff(unique(n$Country), unique(sn$Country))
+```
+
+
+### Merge (...y primeras correciones)
+¿Cual sería la mejor estrategia? 
+
+* Donde ambos coinciden
+* A partir de uno de los dos dataset, descartando valores
+
+La idea es unir ambos datasets a partir del paises, en el caso donde ambos están. Esto da mayor información para cada registro del dataset subnational, con el costo de descartar algunos países.
+
+```{r}
+df <- merge(n, sn, by.x = "ISO",  by.y = "ISO.country.code")
+# Correcciones
+df$Country.y <- NULL
+names(df)[2] = "Country"
+```
+
+? Usar el merge para validar datos.
+* Por ejemplo, casos donde el promedio del país está a mas de 3 desviaciones estándares del mpi nacional?
+* Variables donde colocar granularidad?
+
+### Otras transformaciones
+A modo de simplificar el trabajo y los gráficos, opté por armar un grafico más simple. Reduciendo el nombre las columnas a una expresión más corta, y borrando la columna ISO que no aporta valor (Ya que el dato está contenido dentro de país).
+
+Adicionalmente agregar dos variables:
+* num_simple <- Representa las columnas numéricas del dataframe.
+* no_na_df_simple <- Que es la versión del dataframe sin valores indefinidos.
+
+
+```{r}
+df_simple <- df
+df_simple$ISO <- NULL
+names(df_simple) <- c(
+  "Country"                           
+  , "Urban"                        
+  , "R.Urban"             
+  , "IOD.Urban"    
+  , "Rural"                        
+  , "R.Rural"             
+  , "IOD.Rural"    
+  , "Region"              
+  , "World.region"                      
+  , "National"                      
+  , "Regional"                     
+  , "R.Regional"          
+  , "IOD.Regional")
+str(df_simple)
+num_simple <- names(df_simple)[sapply(df_simple, is.numeric)]
+no_na_df_simple <- df_simple %>% filter(!is.na(IOD.Regional))
+
+```
+
+## Atributo redundantes:
+
+El enfoque es ver la correlación entre todas las variables. Podemos pensar que aquellas variables con una correlacción mayor a 0.95 tienen una fuerte correlación y aportan información muy similar.
+
+A continuación la matriz de correlaciones, y también un gráfico que ayuda a visualizarlas de una forma más sencilla.
+
+```{r}
+cor(no_na_df_simple[num_simple], method = "pearson", use = "complete.obs")
+
+png(filename=paste("Scatterplot.png"))
+ggpairs(df_simple[num_simple], title="correlogram with ggpairs()") 
+dev.off()
+
+```
+
+Encontramos que las siguientes relaciones fuertes:
+
+* MPI Urban y Headcount.Ratio.Urban
+* MPI Rural y Headcount.Ratio.Rural
+* MPI Regional y Headcount.Ratio.Regional
+* MPI Rural y MPI National
+
+Como una segunda consecuencia podemos decir también que hay una fuerte correlación entre MPI National y todas las variables del dataset subnational.
+
+Otra particularidad es que la correlación entre todas las variables del dataset National es alta, el valor de correlación más bajo es 0.884 dentro de la matriz de correlación. Esto claramente no puede ser un accidente.
+
+El calculo del MPI está relacionado a los valores de Headcount Ratio y Intensity of deprivation. 
+  
+  MPI = Headcount Ratio * Intensity of deprivation.
+
+Eso se puede apreciar en el siguiente gráfico:
+
+```{r}
+plot(sn$MPI.Regional, sn$Headcount.Ratio.Regional * sn$Intensity.of.deprivation.Regional)
+```
+
+Hay una fuerte correlación entre los distintos elementos de ambas tablas porque básicamente son distintas derivaciones de un mismo calculo.
+
+## Ruido
+
+Hay multiples formas de buscar ruido. Una primera opción sería buscar variables cuyos boxplot marquen outliers. Es poco probable que los valores se encuentren a una distancia mayor de 3 rangos intercuartiles.
+
+Una seguna es gráficar la distribución de una variable ordenada. De esta forma se puede mejor la continuidad de una variable y si hay valores que se alejan del sector donde se concentran la mayor parte de los registros.
+
+```{r}
+for (var in num_simple) {
+  png(filename=paste("Plot-", var,"-.png"))
+  
+  plot(sort(no_na_df_simple[[var]]) , type = "p", col="red", 
+     ylab = "Headcount.Ratio.Regional", xlab = "Observaciones", main = "Dato original vs suavizado")
+  dev.off()
+  
+  png(filename=paste("BoxPlot-", var,"-.png"))
+  p2<-ggplot(no_na_df_simple, aes(x=no_na_df_simple[[var]])) +
+    geom_boxplot() +
+    coord_flip()
+  plot(p2)
+  dev.off()
+}
+```
+
+## Discretizar
+
+### Por frecuencia
+
+Bin = 2
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalfreq", 2)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:2){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+Bin= 10
+
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalfreq", 10)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+Bin= 20
+
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalfreq", 20)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+
+### Por igual ancho
+
+Bin= 2
+
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalwidth", 2)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:2){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+Bin= 10
+
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalfreq", 10)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+Bin= 20
+
+```{r}
+bin_eq_freq <- discretize(no_na_df_simple$R.Urban,"equalfreq", 20)
+bin_eq_freq$R.Urban = no_na_df_simple$R.Urban
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$R.Urban[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(no_na_df_simple$R.Urban) , type = "p", col="red", 
+     ylab = "R.Urban", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+## Proximos pasos: 
+
+* Ver las variables con mayor cantidad de datos mayores a 3 desviaciones estándar
+* Grafico mostrando el plot de todas las variables
+* Comparar los gráficos y conclusiones

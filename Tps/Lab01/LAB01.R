@@ -9,6 +9,7 @@ library("dplyr")
 library("highcharter")
 library("treemap")
 library("modeest")
+library("GGally")
 
 print("Leemos el csv")
 data <- read.csv('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\Repo\\Practicos\\LAB01\\MPI_subnational.csv')
@@ -33,6 +34,9 @@ print("Estadísticos básicos de variables numéricas")
 summary(data[,numeric_columns])
 
 print("Cantidad de ciudades por región")
+print(table(data$World.region))
+
+print("Gráfico 1: ")
 barx <- barplot(table(data$World.region), 
                 col=unique(data$World.region),
                 xlab = "Regiones",
@@ -42,8 +46,11 @@ barx <- barplot(table(data$World.region),
                 xaxt="n")
 text(x=barx, y=-75, unique(data$region_corto), xpd=TRUE, srt=25)
 
-print("También graficado de otra forma")
+print("Gráfico 2")
+png(filename=paste("00-Grafico.regiones.png"))
 treemap(as.data.frame(table(data$World.region)), index="Var1", vSize="Freq", type="index")
+dev.off()
+
 # Proporcion de ciudades por region
 prop.table(table(data$World.region))
 # Pie de regiones en proporcion
@@ -97,6 +104,9 @@ mposMode[5] <- NULL
 names(mposMode)[5] <- 'Intensity.of.deprivation.Regional.Moda'
 
 # TODO: Ordenar, graficiar
+mposMedian[order(mposMedian$MPI.National.Med),]
+mposMean[order(mposMean$MPI.National.Media),]
+mposMode[order(mposMode$MPI.National.Moda),]
 
 print("Ejercicio 3: Medidas de dispersión")
 
@@ -106,11 +116,62 @@ for (var in numeric_columns) {
   cat(paste('\t * Varianza: ', var(no_na_data[[var]]), '\n'))
   cat(paste('\t * Rango:', range(no_na_data[[var]]), '\n'))
   
-  png(filename=paste("box", var,"-.png"))
-  boxplot(data[[var]] ~ data$World.region, main = "MPI por region", xlab="Region", ylab="MPI.National")
+  png(filename=paste("box-", var,"-.png"))
+  # p2<-ggplot(data, aes(x=data[[var]], y=data$World.region)) +
+  #   geom_boxplot() +
+  #   coord_flip() 
+  # plot(p2)
+  p2 <- ggplot(no_na_data, aes(x=no_na_data[[var]], y=World.region)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) +
+    scale_y_discrete(label=function(x) abbreviate(x, minlength=10)) +
+    coord_flip()  + 
+    ggtitle("Boxplot: ") +
+    labs(y = "Región", x=var, subtitle=paste(var, " - Región")) + 
+    theme(axis.text.x = element_text(angle = 45), 
+          plot.title = element_text(size = 18, face = "bold"),
+          plot.subtitle = element_text(size = 16))
+  plot(p2)
+  dev.off()
+}
+
+print("Boxplot y Scatterplot, dispersión de las distintas variables:")
+for (var in numeric_columns) {
+  cat(paste('Estadísticos de la columna: ', var, '\n'))
+  cat(paste('\t * Desvio estándar: ', sd(no_na_data[[var]]), '\n'))
+  cat(paste('\t * Varianza: ', var(no_na_data[[var]]), '\n'))
+  cat(paste('\t * Rango:', range(no_na_data[[var]]), '\n'))
+  
+  png(filename=paste("scatterplot-", var,"-.png"))
+  # p2<-ggplot(data, aes(x=data[[var]], y=data$World.region)) +
+  #   geom_boxplot() +
+  #   coord_flip() 
+  # plot(p2)
+  p2 <- 
+    
+    ggplot(data, aes(x = data[[var]], y = World.region)) +
+    geom_point() +
+    geom_boxplot(fill="slateblue", alpha=0.2) +
+    scale_y_discrete(label=function(x) abbreviate(x, minlength=10)) +
+    coord_flip()  + 
+    ggtitle("Boxplot: ") +
+    labs(y = "Región", x=var, subtitle=paste(var, " - Región")) + 
+    theme(axis.text.x = element_text(angle = 45), 
+          plot.title = element_text(size = 18, face = "bold"),
+          plot.subtitle = element_text(size = 16))
+  plot(p2)
   dev.off()
 }
 
 print("Scatterplot, todos contra todos:")
 # EL más básico
-plot(data[numeric_columns])
+# plot(no_na_data[numeric_columns])
+
+print("Correlaciones")
+cor(no_na_data[numeric_columns], method = "pearson", use = "complete.obs")
+
+png(filename=paste("Scatterplot.png"))
+ggpairs(data[numeric_columns], title="correlogram with ggpairs()") 
+dev.off()
+
+
+

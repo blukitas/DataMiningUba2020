@@ -1,0 +1,21 @@
+# Tp 1:
+
+Se trata de pobreza. Solo que ellos tienen un enfoque diferente, medir la pobreza no solo desde su condición monetaria. Integran información multidimensional de varias áreas: Educación, Niñez, Salud, Empleo y Vivienda.
+
+Es un programa que lleva adelante "Oxford Poverty & Human Development Initiative (OPHI)" que forma parte del departamento de desarrollo internacional, de la universidad de Oxford, UK.
+
+## Columnas del data set:
+* "ISO.country.code"_: Codigo estándar del país
+* "Country"_: País
+* "Sub.national.region"_: Algo así como provincia
+* "World.region"_: Subregión a nivel mundial. No necesariamente coinciden con los paises, pero más o menos. Las distintas regiones son:
+	* Arab States                 
+	* East Asia and the Pacific   
+	* Europe and Central Asia  
+	* Latin America and Caribbean
+	* South Asia                  
+	* Sub-Saharan Africa          
+* _"MPI.National"_: Índice multidimensional de pobreza del país    
+* _"MPI.Regional"_: Índice multidimensional de pobreza de la región
+* _"Headcount.Ratio.Regional"_: Porcentaje de la población considerada pobre en la región
+* _"Intensity.of.deprivation.Regional"_: Distancia promedio de aquellos listados como pobres de la linea de pobreza.
