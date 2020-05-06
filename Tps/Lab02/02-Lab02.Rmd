@@ -303,6 +303,10 @@ legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1
 
 ```
 
+### Primeras conclusiones
+
+
+
 ## Proximos pasos: 
 
 * Ver las variables con mayor cantidad de datos mayores a 3 desviaciones estándar

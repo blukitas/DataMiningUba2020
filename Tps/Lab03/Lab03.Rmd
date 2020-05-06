@@ -1,0 +1,251 @@
+---
+title: "Lab 03 - Ruido y outliers"
+output: html_notebook
+---
+
+
+# Solución Lab 03
+
+Missing values
+
+## Librerías
+
+```{r}
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("highcharter")
+library("treemap")
+library("modeest")
+library("GGally")
+library("tidyverse")
+library("hrbrthemes")
+library("tidyr")
+library("Rlof")
+```
+
+## Leemos el txt
+
+```{r}
+data <- read.table('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab03\\ruidoso.txt', 
+                   sep=',', header =TRUE, strip.white = T, stringsAsFactors = T)
+```
+
+## Primeras transformaciones
+```{r}
+data[1] <- NULL
+
+```
+
+## Primer vistazo del dataset
+
+```{r}
+str(data)
+```
+
+```{r}
+summary(data)
+```
+
+### Columnas numéricas
+
+```{r}
+num_cols <- names(data)[sapply(data, is.numeric)]
+num_cols
+```
+
+
+### Datos nulos
+
+1 en la última columna
+
+```{r}
+print(data[rowSums(is.na(data)) > 0,])
+```
+
+### Algunas transformaciones
+
+Debido a la naturaleza de los datos, es muchos casos es más conveniente transformar los datos con el logaritmo. Transformamos los 0 en 0.0000001, para evitar resultados en -inf que deforman los gráficos y la información.
+
+```{r}
+no_na_data$Road_55dB[no_na_data$Road_55dB  == 0]  <- 0.0000001
+no_na_data$Road_60dB[no_na_data$Road_60dB  == 0]  <- 0.0000001
+no_na_data$Railways_65dB[no_na_data$Railways_65dB  == 0]  <- 0.0000001
+no_na_data$Industry_65dB[no_na_data$Industry_65dB == 0]  <- 0.0000001
+data_log <- as.data.frame(apply(data[num_cols], 2, log))
+```
+
+
+## Distribución de los datos
+
+Los datos se aproximan a una exponencial. Algunas gráficas son más claras, otras pareciera haber menos mediciones. 
+
+```{r}
+plot(sort(data_log$Road_55dB))
+```
+
+```{r}
+plot(sort(data_log$Road_60dB))
+```
+
+```{r}
+plot(sort(data_log$Railways_65dB))
+```
+
+```{r}
+plot(sort(data_log$Industry_65dB))
+```
+
+
+## Boxplots
+
+Toca aplicar logaritmo, debido a que por la propria naturaleza del dato tiene una curva exponencial
+
+```{r}
+no_na_data <- data %>% filter(!is.na(Industry_65dB))
+no_na_data$Road_55dB[no_na_data$Road_55dB  == 0]  <- 0.0000001
+no_na_data$Road_60dB[no_na_data$Road_60dB  == 0]  <- 0.0000001
+no_na_data$Railways_65dB[no_na_data$Railways_65dB  == 0]  <- 0.0000001
+no_na_data$Industry_65dB[no_na_data$Industry_65dB == 0]  <- 0.0000001
+data_log <- as.data.frame(apply(no_na_data[num_cols], 2, log))
+boxplot(data_log, use.cols = TRUE, title="Boxplot")
+
+```
+
+Aislando los boxplots de Road
+
+```{r}
+boxplot(data_log[c('Road_55dB', 'Road_60dB')], use.cols = TRUE, title="Boxplot")
+```
+
+
+### Correlación
+
+Hay algo interesante en el gráfico de la correlación se aprecia que un gráfico muy parecido al de la ley de las potencias.
+
+```{r}
+ggpairs(data[num_cols], title="Correlograma") 
+```
+
+Siguiendo la misma lógica que para los boxplot, es mejor realizar el gráfico luego de aplicar la función logaritmica
+
+```{r}
+ggpairs(data_log[num_cols], title="Correlograma") 
+```
+
+## Valores anómalos - Metodos Univariado
+
+
+### Boxplot y IQR
+```{r}
+bp = boxplot(data_log$Road_55dB)
+out_inf = bp$stats[1]
+out_sup = bp$stats[5]
+cat("Extremo inferior", out_inf)
+cat("Extremo superior", out_sup)
+```
+
+#### Version sin recortar
+
+```{r}
+plot(sort(data_log$Road_55dB))
+```
+#### Versión recortando
+
+```{r}
+plot(sort(data_log$Road_55dB[data_log$Road_55dB>out_inf & data_log$Road_55dB<out_sup]))
+```
+
+### Desvíos de la Media
+
+```{r}
+N=3
+desvio<-sd(data_log$Road_55dB)
+print(desvio)
+outliers_max<-mean(data_log$Road_55dB)+N*desvio
+print(outliers_max)
+outliers_min<-mean(data_log$Road_55dB)-N*desvio
+```
+
+#### Plot
+
+```{r}
+plot(sort(data_log[data_log>outliers_min & data_log<outliers_max], decreasing = FALSE))
+```
+
+## Z-Score
+
+```{r}
+data_log$zscore<-(data_log$Road_55dB-mean(data_log$Road_55dB))/sd(data_log$Road_55dB)
+umbral<-2
+max(data_log$zscore)
+min(data_log$zscore)
+```
+
+```{r}
+plot(sort(data_log$Road_55dB[data_log$zscore<umbral], decreasing = FALSE))
+```
+
+```{r}
+boxplot(sort(data_log$Road_55dB[data_log$zscore<umbral], decreasing = FALSE))
+```
+
+#### Conclusiones parciales
+
+Tiende a pasar que recorto outliers, pero a partir de ahí se recalcula la media, el IQR, entonces vuelven a surgir outliers.
+
+## Valores anómalos - Metodos multivariado
+
+### LOF
+Con mayor umbral, menos sensibilidad a los outliers. 1 o menos ya toma todos. A partir de 2 se comporta mejor en este gráfico.
+
+```{r}
+
+data$score <- lof(data[num_cols], k=5)
+umbral <- 2
+data$outlier <- (data$score > umbral)
+# data$result_rlof <- na.omit(data[num_cols])
+data$color <- ifelse(data$outlier, "red", "black")
+```
+
+```{r}
+plot(data$Road_55dB, col=data$color)
+plot(data$Road_60dB, col=data$color)
+plot(data$Railways_65dB, col=data$color)
+plot(data$Industry_65dB, col=data$color)
+
+```
+
+### Distancia de Mahalanobis
+
+```{r}
+no_na_data$mahalanobis <- mahalanobis(no_na_data[,num_cols], colMeans(no_na_data[,num_cols]), cov(no_na_data[,num_cols]))
+```
+
+#### Ordenamos de forma decreciente, según el score de Mahalanobis
+
+```{r}
+no_na_data <- no_na_data[order(no_na_data$mahalanobis, decreasing = TRUE),]
+```
+```{r}
+no_na_data
+```
+
+#### Descartamos los outliers según un umbral
+
+A mayor umbral somos más restrictivos a la hora de tomar los outliers. Con un umbral de 1, prácticamento la mitad de los valores son tomados como outliers. A partir de 8 tenemos una mejor selección, haciendo distintas pruebas tomé como valor 13.
+
+```{r}
+umbral <- 13
+no_na_data$outlier <- (no_na_data$mahalanobis > umbral)
+no_na_data$color <- ifelse(no_na_data$mahalanobis > umbral, "red", "black")
+```
+
+#### Plots
+
+```{r}
+plot(no_na_data$Road_55dB, col=no_na_data$color)
+plot(no_na_data$Road_60dB, col=no_na_data$color)
+plot(no_na_data$Railways_65dB, col=no_na_data$color)
+plot(no_na_data$Industry_65dB, col=no_na_data$color)
+```

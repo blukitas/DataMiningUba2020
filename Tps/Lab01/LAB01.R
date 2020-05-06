@@ -11,6 +11,7 @@ library("treemap")
 library("modeest")
 library("GGally")
 
+
 print("Leemos el csv")
 data <- read.csv('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\Repo\\Practicos\\LAB01\\MPI_subnational.csv')
 

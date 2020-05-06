@@ -1,0 +1,186 @@
+---
+title: "R Notebook - Lab 03"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+# Solución Lab 03
+
+Missing values
+
+## Librerías
+
+```{r}
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("highcharter")
+library("treemap")
+library("modeest")
+library("GGally")
+library("tidyverse")
+library("hrbrthemes")
+library("tidyr")
+```
+
+## Leemos el txt
+
+```{r}
+data <- read.table('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab03\\auto-mpg.data-original.txt')
+```
+
+
+## Primeros ajustes
+
+Colocarle nombre a las columnas, además transformar a texto en minúsculas el modelo del auto.
+
+```{r}
+names(data)[1] <- 'mpg'
+names(data)[2] <- 'cylinders'
+names(data)[3] <- 'displacement'
+names(data)[4] <- 'horsepower'
+names(data)[5] <- 'weight'
+names(data)[6] <- 'acceleration'
+names(data)[7] <- 'model.year'
+names(data)[8] <- 'origin'
+names(data)[9] <- 'car.name'
+data$car.name <- tolower(data$car.name)
+```
+
+
+## Primer vistazo del dataset
+
+```{r}
+str(data)
+```
+
+```{r}
+summary(data)
+```
+
+### Columnas numéricas
+
+```{r}
+num_cols <- names(data)[sapply(data, is.numeric)]
+```
+
+
+### Datos nulos
+
+Hay 8 datos en MPG y6 en HorsePower
+
+```{r}
+print(data[rowSums(is.na(data)) > 0,])
+```
+
+### Distintos valores en algunas columnas específicas
+
+#### Año del modelo:
+```{r}
+unique(data$model.year)
+```
+
+#### Origen:
+Origen es un campo numérico, pero que en realidad es la representación de un categórico. 
+
+TODO: Que significa?
+```{r}
+unique(data$origin)
+```
+
+#### Cantidad de cilindros:
+```{r}
+unique(data$cylinders)
+```
+
+#### Modelos
+
+Podemos ver que hay diferencia entre la cantidad de modelos y la cantidad de modelos únicos. Si bien, no es una gran brecha, da a entender que  aquí podríamos encontrar bastante información.
+
+```{r}
+length(unique(data$car.name))
+```
+```{r}
+length(data$car.name)
+```
+
+Viendo los primeros registros, parece que hay un patrón, donde la primera palabra del modelo representa la marca. Si lo dividimos en los espacios, se generan 3 columnas. 
+
+```{r}
+name.x <- data %>%
+  separate(car.name, c("name1", "name2", "name3"), " ")
+data$car.brand <- name.x$name1
+sort(unique(data$car.brand))
+```
+
+Al ser un número tan acotado de valores es factible recorrerlo buscando insconsistencias. También corregirlas a mano.
+
+```{r}
+data$car.brand[data$car.brand == 'toyouta']  <- "toyota" 
+data$car.brand[data$car.brand == 'chevroelt']  <- "chevrolet" 
+data$car.brand[data$car.brand == 'vokswagen']  <- "volkswagen" 
+data$car.brand[data$car.brand == 'vw']  <- "volkswagen" 
+data$car.brand[data$car.brand == 'maxda']  <- "mazda" 
+# En este caso pasa que mercedes benz puede estar separado y quedo en la segunda columna
+data$car.brand[data$car.brand == 'mercedes']  <- "mercedes-benz" 
+```
+
+Para cerrar este segmento representamos gráficamente la representatividad de cada marca.
+```{r}
+par(mar=c(8,8,4,1)+.1)
+# barplot(c(1.1, 0.8, 0.7), horiz=TRUE, border="blue", axes=FALSE, col="darkblue")
+# axis(2, at=1:3, lab=c("elephant", "hippo", "snorkel"), las=1, cex.axis=1.3)
+barx <- barplot(table(sort(data$car.brand)),
+                #col=unique(data$car.brand),
+                # xlab = "Marcas",
+                ylab = "Cant",
+                ylim = c(0,60),
+                main = "Cantidad de coches por marcas",
+                xaxt="n")
+text(x=barx, y=-9, unique(sort(data$car.brand)), xpd=TRUE, srt=90)
+```
+
+Y también podemos ver como se reparten el dataset las distintas marcas:
+
+```{r}
+brands <- as.data.frame(table(data$car.brand))
+treemap(brands, index="Var1", vSize="Freq", type="index")
+```
+
+
+### Boxplots
+
+Una buena forma de tener una primera aproximación a la distribución de los datos en las distintas columas son los boxplot. Podemos ver varias medidas estadísticas de una forma muy amigable.
+
+Como cada variable tiene una cierta distribución se tomó la decisión de normalizar los datos y sacar los valores nulos para el gráfico.
+
+```{r}
+no_na_data <- data %>% filter(!is.na(mpg)) %>% filter(!is.na(horsepower))
+data_norm <- as.data.frame(apply(no_na_data[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+
+boxplot(data_norm, use.cols = TRUE, title="Boxplot")
+```
+
+### Correlación
+
+Este dataset a diferencia de anteriores tiene una correlación muy baja entre las variables. Algunos relaciones que podríamos explorar serían:
+
+* Displacement y Cylinders
+* Displacement y Weight
+* Displacement y HorsePower
+* HorsePower y Cylinders
+
+```{r}
+ggpairs(data[num_cols], title="Correlograma") 
+```
+
+Pensando que displacement es:
+
+> Engine displacement is the measure of the cylinder volume swept by all of the pistons of a piston engine, excluding the combustion chambers. It is commonly used as an expression of an engine's size, and by extension as a loose indicator of the power an engine might be capable of producing and the amount of fuel it should be expected to consume. For this reason displacement is one of the measures often used in advertising, as well as regulating, motor vehicles.
+> `r tufte::quote_footer('--- Wikipedia')`
+
+Podemos pensar que si displacemente es una medida de volumen de losc ilindros, y que puede usarse como referencia del tamaño del motor, tiene sentido que existan estas correlaciones.
+
+s
+

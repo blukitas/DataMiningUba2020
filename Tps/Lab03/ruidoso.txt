@@ -1,4 +1,4 @@
-,Road_55dB,Road_60dB,Railways_65dB,Industry_65dB
+index,Road_55dB,Road_60dB,Railways_65dB,Industry_65dB
 1,166400,79200,1100,0
 2,20000,11000,0,0
 3,37800,18000,0,0
