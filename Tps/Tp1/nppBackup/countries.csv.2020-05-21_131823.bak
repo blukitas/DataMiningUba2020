@@ -1,0 +1,198 @@
+;Codigo;Pais;Region;Continente
+;ALB;Albania  ;Europa meridional  ;Europa  
+  ;AND;Andorra  ;Europa meridional  ;Europa  
+  ;BIH;Bosnia y Herzegovina  ;Europa meridional  ;Europa  
+  ;HRV;Croacia  ;Europa meridional  ;Europa  
+  ;SVN;Eslovenia  ;Europa meridional  ;Europa  
+  ;ESP;España  ;Europa meridional  ;Europa  
+  ;GRC;Grecia  ;Europa meridional  ;Europa  
+  ;ITA;Italia  ;Europa meridional  ;Europa  
+  ;MKD;Macedonia  ;Europa meridional  ;Europa  
+  ;MLT;Malta  ;Europa meridional  ;Europa  
+  ;MNE;Montenegro  ;Europa meridional  ;Europa  
+  ;PRT;Portugal  ;Europa meridional  ;Europa  
+  ;SMR;San Marino  ;Europa meridional  ;Europa  
+  ;VAT;Santa Sede  ;Europa meridional  ;Europa  
+  ;SRB;Serbia  ;Europa meridional  ;Europa  
+  ;DEU;Alemania  ;Europa occidental  ;Europa  
+  ;AUT;Austria  ;Europa occidental  ;Europa  
+  ;BEL;Bélgica  ;Europa occidental  ;Europa  
+  ;FRA;Francia  ;Europa occidental  ;Europa  
+  ;LIE;Liechtenstein  ;Europa occidental  ;Europa  
+  ;LUX;Luxemburgo  ;Europa occidental  ;Europa  
+  ;MCO;Mónaco  ;Europa occidental  ;Europa  
+  ;NLD;Países Bajos  ;Europa occidental  ;Europa  
+  ;CHE;Suiza  ;Europa occidental  ;Europa  
+  ;BLR;Belarús  ;Europa oriental  ;Europa  
+  ;BGR;Bulgaria  ;Europa oriental  ;Europa  
+  ;HUN;Hungría  ;Europa oriental  ;Europa  
+  ;MDA;Moldavia  ;Europa oriental  ;Europa  
+  ;POL;Polonia  ;Europa oriental  ;Europa  
+  ;CZE;República Checa  ;Europa oriental  ;Europa  
+  ;SVK;República Eslovaca  ;Europa oriental  ;Europa  
+  ;ROU;Rumanía  ;Europa oriental  ;Europa  
+  ;RUS;Rusia  ;Europa oriental  ;Europa  
+  ;UKR;Ucrania  ;Europa oriental  ;Europa  
+  ;DNK;Dinamarca  ;Europa septentrional  ;Europa  
+  ;EST;Estonia  ;Europa septentrional  ;Europa  
+  ;FIN;Finlandia  ;Europa septentrional  ;Europa  
+  ;IRL;Irlanda  ;Europa septentrional  ;Europa  
+  ;ISL;Islandia  ;Europa septentrional  ;Europa  
+  ;LVA;Letonia  ;Europa septentrional  ;Europa  
+  ;LTU;Lituania  ;Europa septentrional  ;Europa  
+  ;NOR;Noruega  ;Europa septentrional  ;Europa  
+  ;GBR;Reino Unido  ;Europa septentrional  ;Europa  
+  ;SWE;Suecia  ;Europa septentrional  ;Europa  
+  ;AGO;Angola  ;África central  ;África  
+  ;CMR;Camerún  ;África central  ;África  
+  ;COG;Congo  ;África central  ;África  
+  ;GAB;Gabón  ;África central  ;África  
+  ;GNQ;Guinea Ecuatorial  ;África central  ;África  
+  ;CAF;República Centroafricana  ;África central  ;África  
+  ;COD;República Democrática del Congo  ;África central  ;África  
+  ;STP;Santo Tomé y Príncipe  ;África central  ;África  
+  ;TCD;Chad  ;África central  ;África  
+  ;BWA;Botswana  ;África meridional  ;África  
+  ;LSO;Lesotho  ;África meridional  ;África  
+  ;NAM;Namibia  ;África meridional  ;África  
+  ;ZAF;Sudáfrica  ;África meridional  ;África  
+  ;SWZ;Swazilandia  ;África meridional  ;África  
+  ;BEN;Benin  ;África occidental  ;África  
+  ;BFA;Burkina Faso  ;África occidental  ;África  
+  ;CPV;Cabo Verde  ;África occidental  ;África  
+  ;CIV;Costa de Marfil  ;África occidental  ;África  
+  ;GMB;Gambia  ;África occidental  ;África  
+  ;GHA;Ghana  ;África occidental  ;África  
+  ;GIN;Guinea  ;África occidental  ;África  
+  ;GNB;Guinea-Bissau  ;África occidental  ;África  
+  ;LBR;Liberia  ;África occidental  ;África  
+  ;MLI;Mali  ;África occidental  ;África  
+  ;MRT;Mauritania  ;África occidental  ;África  
+  ;NER;Níger  ;África occidental  ;África  
+  ;NGA;Nigeria  ;África occidental  ;África  
+  ;SEN;Senegal  ;África occidental  ;África  
+  ;SLE;Sierra Leona  ;África occidental  ;África  
+  ;TGO;Togo  ;África occidental  ;África  
+  ;BDI;Burundi  ;África oriental  ;África  
+  ;COM;Comores  ;África oriental  ;África  
+  ;DJI;Djibouti  ;África oriental  ;África  
+  ;ERI;Eritrea  ;África oriental  ;África  
+  ;ETH;Etiopía  ;África oriental  ;África  
+  ;KEN;Kenia  ;África oriental  ;África  
+  ;MDG;Madagascar  ;África oriental  ;África  
+  ;MWI;Malawi  ;África oriental  ;África  
+  ;MUS;Mauricio  ;África oriental  ;África  
+  ;MOZ;Mozambique  ;África oriental  ;África  
+  ;RWA;Ruanda  ;África oriental  ;África  
+  ;SYC;Seychelles  ;África oriental  ;África  
+  ;SOM;Somalia  ;África oriental  ;África  
+  ;TZA;Tanzania  ;África oriental  ;África  
+  ;UGA;Uganda  ;África oriental  ;África  
+  ;ZMB;Zambia  ;África oriental  ;África  
+  ;ZWE;Zimbabwe  ;África oriental  ;África  
+  ;DZA;Argelia  ;África septentrional  ;África  
+  ;EGY;Egipto  ;África septentrional  ;África  
+  ;LBY;Libia  ;África septentrional  ;África  
+  ;MAR;Marruecos  ;África septentrional  ;África  
+  ;ESH;Sáhara Occidental  ;África septentrional  ;África  
+  ;SSD;Sudán del Sur  ;África septentrional  ;África  
+  ;SDN;Sudán   ;África septentrional  ;África  
+  ;TUN;Túnez  ;África septentrional  ;África  
+  ;BLZ;Belice  ;América central  ;América  
+  ;CRI;Costa Rica  ;América central  ;América  
+  ;SLV;El Salvador  ;América central  ;América  
+  ;GTM;Guatemala  ;América central  ;América  
+  ;HND;Honduras  ;América central  ;América  
+  ;MEX;México  ;América central  ;América  
+  ;NIC;Nicaragua  ;América central  ;América  
+  ;PAN;Panamá  ;América central  ;América  
+  ;CAN;Canadá  ;América del Norte  ;América  
+  ;USA;Estados Unidos de América  ;América del Norte  ;América  
+  ;ARG;Argentina  ;América del Sur  ;América  
+  ;BOL;Bolivia  ;América del Sur  ;América  
+  ;BRA;Brasil  ;América del Sur  ;América  
+  ;COL;Colombia  ;América del Sur  ;América  
+  ;ECU;Ecuador  ;América del Sur  ;América  
+  ;GUY;Guyana  ;América del Sur  ;América  
+  ;PRY;Paraguay  ;América del Sur  ;América  
+  ;PER;Perú  ;América del Sur  ;América  
+  ;SUR;Surinam  ;América del Sur  ;América  
+  ;URY;Uruguay  ;América del Sur  ;América  
+  ;VEN;Venezuela  ;América del Sur  ;América  
+  ;CHL;Chile  ;América del Sur  ;América  
+  ;ATG;Antigua y Barbuda  ;Caribe  ;América  
+  ;BHS;Bahamas  ;Caribe  ;América  
+  ;BRB;Barbados  ;Caribe  ;América  
+  ;CUB;Cuba  ;Caribe  ;América  
+  ;DMA;Dominica  ;Caribe  ;América  
+  ;GRD;Granada  ;Caribe  ;América  
+  ;HTI;Haití  ;Caribe  ;América  
+  ;JAM;Jamaica  ;Caribe  ;América  
+  ;DOM;República Dominicana  ;Caribe  ;América  
+  ;KNA;San Cristóbal y Nieves  ;Caribe  ;América  
+  ;LCA;Santa Lucía  ;Caribe  ;América  
+  ;VCT;San Vicente y las Granadinas  ;Caribe  ;América  
+  ;TTO;Trinidad y Tobago  ;Caribe  ;América  
+  ;KAZ;Kazajstán  ;Asia central  ;Asia  
+  ;KGZ;Kirguistán  ;Asia central  ;Asia  
+  ;TJK;Tadyikistán  ;Asia central  ;Asia  
+  ;TKM;Turkmenistán  ;Asia central  ;Asia  
+  ;UZB;Uzbekistán  ;Asia central  ;Asia  
+  ;AFG;Afganistán  ;Asia meridional  ;Asia  
+  ;BGD;Bangladesh  ;Asia meridional  ;Asia  
+  ;BTN;Bhután  ;Asia meridional  ;Asia  
+  ;IND;India  ;Asia meridional  ;Asia  
+  ;IRN;Irán  ;Asia meridional  ;Asia  
+  ;MDV;Maldivas  ;Asia meridional  ;Asia  
+  ;NPL;Nepal  ;Asia meridional  ;Asia  
+  ;PAK;Pakistán  ;Asia meridional  ;Asia  
+  ;LKA;Sri Lanka  ;Asia meridional  ;Asia  
+  ;SAU;Arabia Saudí  ;Asia occidental  ;Asia  
+  ;ARM;Armenia  ;Asia occidental  ;Asia  
+  ;AZE;Azerbaiyán  ;Asia occidental  ;Asia  
+  ;BHR;Bahréin  ;Asia occidental  ;Asia  
+  ;ARE;Emiratos Árabes Unidos  ;Asia occidental  ;Asia  
+  ;GEO;Georgia  ;Asia occidental  ;Asia  
+  ;YEM;Yemen  ;Asia occidental  ;Asia  
+  ;IRQ;Iraq  ;Asia occidental  ;Asia  
+  ;ISR;Israel  ;Asia occidental  ;Asia  
+  ;JOR;Jordania  ;Asia occidental  ;Asia  
+  ;KWT;Kuwait  ;Asia occidental  ;Asia  
+  ;LBN;Líbano  ;Asia occidental  ;Asia  
+  ;OMN;Omán  ;Asia occidental  ;Asia  
+  ;QAT;Qatar  ;Asia occidental  ;Asia  
+  ;SYR;Siria  ;Asia occidental  ;Asia  
+  ;PSE;Territorios Palestinos (o Palestina)  ;Asia occidental  ;Asia  
+  ;TUR;Turquía  ;Asia occidental  ;Asia  
+  ;CYP;Chipre  ;Asia occidental  ;Asia  
+  ;PRK;Corea del Norte  ;Asia oriental  ;Asia  
+  ;KOR;Corea del Sur  ;Asia oriental  ;Asia  
+  ;JPN;Japón  ;Asia oriental  ;Asia  
+  ;MNG;Mongolia  ;Asia oriental  ;Asia  
+  ;TWN;Taiwán, China  ;Asia oriental  ;Asia  
+  ;CHN;China  ;Asia oriental  ;Asia  
+  ;BRN;Brunei  ;Asia sudoriental  ;Asia  
+  ;KHM;Camboya  ;Asia sudoriental  ;Asia  
+  ;PHL;Filipinas  ;Asia sudoriental  ;Asia  
+  ;IDN;Indonesia  ;Asia sudoriental  ;Asia  
+  ;LAO;Laos  ;Asia sudoriental  ;Asia  
+  ;MYS;Malasia  ;Asia sudoriental  ;Asia  
+  ;MMR;Myanmar  ;Asia sudoriental  ;Asia  
+  ;SGP;Singapur  ;Asia sudoriental  ;Asia  
+  ;THA;Tailandia  ;Asia sudoriental  ;Asia  
+  ;TLS;Timor Oriental  ;Asia sudoriental  ;Asia  
+  ;VNM;Vietnam  ;Asia sudoriental  ;Asia  
+  ;AUS;Australia  ;Australia y Nueva Zelanda  ;Oceanía  
+  ;NZL;Nueva Zelanda  ;Australia y Nueva Zelanda  ;Oceanía  
+  ;FJI;Fiji  ;Melanesia  ;Oceanía  
+  ;SLB;Islas Salomón  ;Melanesia  ;Oceanía  
+  ;PNG;Papúa Nueva Guinea  ;Melanesia  ;Oceanía  
+  ;VUT;Vanuatu  ;Melanesia  ;Oceanía  
+  ;MHL;Islas Marshall  ;Micronesia  ;Oceanía  
+  ;KIR;Kiribati  ;Micronesia  ;Oceanía  
+  ;FSM;Micronesia  ;Micronesia  ;Oceanía  
+  ;NRU;Nauru  ;Micronesia  ;Oceanía  
+  ;PLW;Palaos  ;Micronesia  ;Oceanía  
+  ;WSM;Samoa  ;Polinesia  ;Oceanía  
+  ;TON;Tonga  ;Polinesia  ;Oceanía  
+  ;TUV;Tuvalu  ;Polinesia  ;Oceanía  

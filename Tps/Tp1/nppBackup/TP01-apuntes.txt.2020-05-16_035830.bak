@@ -1,0 +1,48 @@
+
+# Hay un solo idioma, "Es"
+# Hay 4 tweets con más de 140 caracteres
+(https://www.independent.co.uk/life-style/gadgets-and-tech/news/twitter-character-limit-update-tweets-expanded-140-280-english-japanese-app-a7968961.html - https://developer.twitter.com/en/docs/basics/counting-characters)
+
+# 25440 personas distintas twitteando
+# 25435 personas distintas archivo de personas
+(? Que personas no hicieron tweets? Fueron nombradas? Que personas fueron nombradas?)
+
+# 441 => screen_name == name
+# 24994 => Usando distinto
+(Porque? Hay entre estos nombres iguales alguna correlacion? es falta de interes? Puedo reducir alguna columna? Alguna del as dos es más valiosa?
+
+# Location que más aparece
+null, México, Buenos aires, Argentina, Venezuela
+(Hay forma de unificar eso? Validar eso? De hacer algo?
+
+# Mayores fuentes
+Twitter for Android - 15716.0
+Twitter for iPhone - 7049.0
+(Cuales los más usados? 
+(Caracteristicas para esos datos? Unificar algunos? 
+
+Verificado:
+28424.0 - No
+483.0 - Si
+Que hay entre lo verificado? Complementar con el nombre? Con amigos
+( usar ciertas caracteristicas y pensar outliers y bots?
+
+Cuentas verificadas y tweets
+Nubes de palabras?
+Plot ordenado de tweets por tiempo? Comparar picos con anuncios de extension de cuarentena
+Comparar tweets con contagios, con duracion de la cuarentena
+Popularidad_tweet = retweets, favs
+Popularidad_perfil = suma de retweets, favs, listas, amigos
+Estan relacionados estos perfiles? Algo tipo grafo?
+Coords y location
+
+# Tweets con retweet y favoritos
+2 que tul eso?
+
+## Dataset de datos.gov
+
+https://datos.gob.ar/dataset/salud-covid-19-determinaciones-registradas-republica-argentina
+https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina
+https://datos.gob.ar/dataset/salud-vigilancia-infecciones-respiratorias-agudas
+https://datos.gob.ar/dataset/desarrollo-social-informe-llamadas-linea-144
+

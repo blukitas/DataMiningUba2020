@@ -1,0 +1,14 @@
+db.createView("retweets", "tweets_mongo_covid19", [{
+            $match: {
+                is_retweet: true
+            }
+        }, {
+            $project: {
+                retweet_text: 1,
+                retweet_created_at: 1,
+                retweet_screen_name: 1,
+                retweet_location: 1,
+                retweet_description: 1
+            }
+        }
+    ])

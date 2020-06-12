@@ -1,0 +1,98 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Lab 08 - Intro a reglas de asociación
+
+RDATA = The RData format (usually with extension .rdata or .rda) is a format designed for use with R, a system for statistical computation and related graphics, for storing a complete R workspace or selected "objects" from a workspace in a form that can be loaded back by R. The save function in R has options that result in significantly different variants of the format. 
+
+https://www.loc.gov/preservation/digital/formats/fdd/fdd000470.shtml#:~:text=The%20RData%20format%20(usually%20with,be%20loaded%20back%20by%20R.
+
+```{r}
+load("titanic.raw.rdata")
+```
+
+Más info del dataset: https://www.kaggle.com/c/titanic/data
+
+Variable	| Definition			    | Key						|
+--------------------------------------------------------------------|------------
+survival	| Survival		  		  | 0 = No, 1 = Yes				|
+pclass		| Ticket class		  	| 1 = 1st, 2 = 2nd, 3 = 3rd		| A proxy for socio-economic status (SES). 3rd = Lower
+sex			  | Sex					        |								| 
+Age			  | Age in years		   	|								| Age is fractional if less than 1. If the age is estimated, is it in the form of xx.5
+sibsp		  | # of siblings/spose	|								| / spouses aboard the Titanic	- Brother, sister,../Housband,wife
+parch		  | # of parents 	  		|								| / children aboard the Titanic - Mother, father, son, daughter,
+ticket		| Ticket number			  |								|
+fare		  | Passenger fare	  	|								|
+cabin		  | Cabin number			  |								|
+embarked	| Port of Embarkation	| C = Cherbourg, Q = Queenstown, S = Southampton
+
+## Soporte
+Soporte = Fracción de transacciones que contiene a un itemset.
+S(X) = soporte(x) / |T|
+
+Es probabilidad bayesiana o no?
+
+# ¿Cuál es el soporte de Survived=Yes?
+* Survived = Yes
+
+Esto sería así, como cuantos sobrevivieron.
+```{r}
+
+attach(titanic.raw)
+
+nrow(titanic.raw[Survived=='Yes',])/nrow(titanic.raw)
+```
+
+# ¿Cuál es el soporte de Survived=Yes y Sex=Male?
+* Survived=Yes y Sex=Male
+
+Cuantos sobrevivieron y eran hombres. 
+```{r}
+nrow(titanic.raw[Survived=='Yes' & Sex=='Male' ,])/nrow(titanic.raw)
+```
+
+
+### Cuales itemsets de los que se listan a continuación tienen mayor soporte?
+{Class=3rd, Sex=Male, Survived=Yes}
+{Class=3rd, Sex=Male, Survived=No}
+
+```{r}
+nrow(titanic.raw[Class=='3rd' & Sex=='Male' & Survived=='Yes' ,])/nrow(titanic.raw)
+nrow(titanic.raw[Class=='3rd' & Sex=='Male' & Survived=='No' ,])/nrow(titanic.raw)
+```
+
+El segundo, los hombres de tercera clase terminaron muriendo más.
+
+
+### ¿Considera que 0.02 es un minsup adecuado para conseguir itemsets frecuentes? Justifique su respuesta con ejemplos.
+No. Siguiendo los ejemplos anteriores, yo tomaría minsup >= 0.15, que representaría más de un 15% de frecuencia.
+
+##Confianza
+Calcular la confianza para el siguiente conjunto de reglas:
+
+{Class=Crew} => {Survived=Yes}
+{Class=1st} => {Survived=Yes}
+
+```{r}
+nrow(titanic.raw[Class=='Crew' & Survived=='Yes',])/nrow(titanic.raw[Class=='Crew',])
+nrow(titanic.raw[Class=='1st' & Survived=='Yes',])/nrow(titanic.raw[Class=='1st',])
+```
+
+Para 1 y 2 calcule para los no sobrevivientes e interprete los resultados.
+Se puede hacer el cálculo, o se podría hacer hecho_ 1 - el calculo de arriba.
+```{r}
+nrow(titanic.raw[Class=='Crew' & Survived=='No',])/nrow(titanic.raw[Class=='Crew',])
+nrow(titanic.raw[Class=='1st' & Survived=='No',])/nrow(titanic.raw[Class=='1st',])
+```
+
+¿Cuál de las siguientes reglas tiene minconf >= 0.3?
+{Age=Adult, Sex=Female} => {Survived=Yes}
+{Age=Adult, Sex=Male} => {Survived=No}
+
+
+```{r}
+print(nrow(titanic.raw[Age=='Adult' & Sex=='Female' & Survived=='Yes',])/nrow(titanic.raw[Age=='Adult' & Sex=='Female',]))
+print(nrow(titanic.raw[Age=='Adult' & Sex=='Male' & Survived=='No',])/nrow(titanic.raw[Age=='Adult' & Sex=='Male',]))
+```

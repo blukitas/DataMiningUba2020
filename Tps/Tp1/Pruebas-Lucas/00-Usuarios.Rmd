@@ -1,0 +1,436 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("highcharter")
+library("treemap")
+library("modeest")
+library("GGally")
+library("tidyverse")
+library("hrbrthemes")
+library("tidyr")
+library("VIM")
+library("e1071")
+library("mice")
+library("mongolite")
+#Carga de paquetes
+library("SnowballC")
+library("tm")
+library("twitteR")
+library("syuzhet")
+
+library("infotheo"); # Discretize variable
+# library("MASS"); # Chi2 en variables cualitativas
+```
+
+
+```{r}
+
+user_estadisticas <- mongo(db="DMUBA", collection="user_estadisticas")
+info_user <- user_estadisticas$find()
+```
+
+```{r}
+summary(info_user)
+```
+
+
+```{r}
+
+data_log <- as.data.frame(apply(info_user[,5:9], 2, log10))
+info_user[info_user == 0] <- 0.00001
+info_user[is.na(info_user)] <- 0.0001
+data_log_1 <- as.data.frame(apply(info_user[,5:9], 2, log10))
+
+```
+
+```{r}
+summary(data_log_1)
+```
+
+
+```{r}
+ggpairs(data_log)
+```
+
+```{r}
+ggpairs(data_log_1)
+
+```
+
+```{r}
+
+bin_eq_freq <- discretize(data_log_1$followers_count,"equalfreq", 20)
+bin_eq_freq$followers_count = data_log_1$followers_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$followers_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para followers_count: ", sort(unique(bin_eq_freq$suavizado)))
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$followers_count) , type = "p", col="red", 
+     ylab = "followers_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+
+bin_eq_freq <- discretize(data_log_1$listed_count,"equalfreq", 20)
+bin_eq_freq$listed_count = data_log_1$listed_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$listed_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para listed_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$listed_count) , type = "p", col="red", 
+     ylab = "listed_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+
+```{r}
+# no_na_data <- data_log_1[!is.na(data_log_1$statuses_count),]
+bin_eq_freq <- discretize(data_log_1$statuses_count,"equalwidth", 5)
+bin_eq_freq$statuses_count = data_log_1$statuses_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:5){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$statuses_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para statuses_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$statuses_count) , type = "p", col="red", 
+     ylab = "statuses_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+# no_na_data <- data_log_1[!is.na(data_log_1$favourites_count),]
+bin_eq_freq <- discretize(data_log_1$favourites_count,"equalwidth", 10)
+bin_eq_freq$favourites_count = data_log_1$favourites_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$favourites_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para favourites_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$favourites_count) , type = "p", col="red", 
+     ylab = "favourites_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+ 
+#User original - rt
+
+tweet_users_original
+
+
+```{r}
+
+user_estadisticas <- mongo(db="DMUBA", collection="tweet_users_original")
+user_original <- user_estadisticas$find()
+# Primero lso que son retweet
+info_user <- user_original[is.na(user_original$quoted_verified) & !is.na(user_original$retweet_verified), 1:7]
+```
+
+```{r}
+summary(info_user)
+```
+
+
+```{r}
+
+data_log <- as.data.frame(apply(info_user[,2:6], 2, log10))
+info_user[info_user == 0] <- 0.00001
+info_user[is.na(info_user)] <- 0.0001
+data_log_1 <- as.data.frame(apply(info_user[,2:6], 2, log10))
+
+```
+
+```{r}
+summary(data_log_1)
+```
+
+
+```{r}
+ggpairs(data_log)
+```
+
+```{r}
+ggpairs(data_log_1)
+
+```
+
+```{r}
+
+bin_eq_freq <- discretize(data_log_1$retweet_followers_count,"equalfreq", 20)
+bin_eq_freq$retweet_followers_count = data_log_1$retweet_followers_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$retweet_followers_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para retweet_followers_count: ", sort(unique(bin_eq_freq$suavizado)))
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$retweet_followers_count) , type = "p", col="red", 
+     ylab = "retweet_followers_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+
+bin_eq_freq <- discretize(data_log_1$retweet_statuses_count,"equalfreq", 20)
+bin_eq_freq$retweet_statuses_count = data_log_1$retweet_statuses_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$retweet_statuses_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para retweet_statuses_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$retweet_statuses_count) , type = "p", col="red", 
+     ylab = "retweet_statuses_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+
+```{r}
+# no_na_data <- data_log_1[!is.na(data_log_1$retweet_retweet_count),]
+bin_eq_freq <- discretize(data_log_1$retweet_retweet_count,"equalwidth", 5)
+bin_eq_freq$retweet_retweet_count = data_log_1$retweet_retweet_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:5){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$retweet_retweet_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para retweet_retweet_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$retweet_retweet_count) , type = "p", col="red", 
+     ylab = "retweet_retweet_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+# no_na_data <- data_log_1[!is.na(data_log_1$retweet_favorite_count),]
+bin_eq_freq <- discretize(data_log_1$retweet_favorite_count,"equalwidth", 10)
+bin_eq_freq$retweet_favorite_count = data_log_1$retweet_favorite_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$retweet_favorite_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para retweet_favorite_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$retweet_favorite_count) , type = "p", col="red", 
+     ylab = "retweet_favorite_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+
+
+### User original - QT
+
+```{r}
+
+# Primero lso que son retweet
+info_user <- user_original[!is.na(user_original$quoted_verified) & is.na(user_original$retweet_verified), 8:14]
+```
+
+```{r}
+summary(info_user)
+```
+
+
+```{r}
+
+data_log <- as.data.frame(apply(info_user[,2:6], 2, log10))
+info_user[info_user == 0] <- 0.00001
+info_user[is.na(info_user)] <- 0.0001
+data_log_1 <- as.data.frame(apply(info_user[,2:6], 2, log10))
+
+```
+
+```{r}
+summary(data_log_1)
+```
+
+
+```{r}
+ggpairs(data_log)
+```
+
+```{r}
+ggpairs(data_log_1)
+
+```
+
+```{r}
+
+bin_eq_freq <- discretize(data_log_1$quoted_followers_count,"equalfreq", 20)
+bin_eq_freq$quoted_followers_count = data_log_1$quoted_followers_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$quoted_followers_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para quoted_followers_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$quoted_followers_count) , type = "p", col="red", 
+     ylab = "quoted_followers_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+
+bin_eq_freq <- discretize(data_log_1$quoted_statuses_count,"equalfreq", 20)
+bin_eq_freq$quoted_statuses_count = data_log_1$quoted_statuses_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$quoted_statuses_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para quoted_statuses_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$quoted_statuses_count) , type = "p", col="red", 
+     ylab = "quoted_statuses_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+
+```{r}
+# no_na_data <- data_log_1[!is.na(data_log_1$quoted_retweet_count),]
+bin_eq_freq <- discretize(data_log_1$quoted_retweet_count,"equalwidth", 5)
+bin_eq_freq$quoted_retweet_count = data_log_1$quoted_retweet_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:5){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$quoted_retweet_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para quoted_retweet_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$quoted_retweet_count) , type = "p", col="red", 
+     ylab = "quoted_retweet_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+# no_na_data <- data_log_1[!is.na(data_log_1$quoted_favorite_count),]
+bin_eq_freq <- discretize(data_log_1$quoted_favorite_count,"equalwidth", 10)
+bin_eq_freq$quoted_favorite_count = data_log_1$quoted_favorite_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$quoted_favorite_count[ bin_eq_freq$X==bin])
+}
+
+cat("Frecuencias media de cada bin para quoted_favorite_count: ", sort(unique(bin_eq_freq$suavizado)))
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$quoted_favorite_count) , type = "p", col="red", 
+     ylab = "quoted_favorite_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+## Tipos de usuarios
+
+```{r}
+
+grafico_popularidad <- data.frame(table(info_user$user_popularity))
+
+barplot(sort(grafico_popularidad$Freq, decreasing=TRUE), legend.text=grafico_popularidad$Var1, col=c('red','green','blue'))
+```
+
+#User original
+
+```{r}
+
+user_estadisticas <- mongo(db="DMUBA", collection="user_original_rt_estadisticas")
+info_user_original <- user_estadisticas$find()
+summary(info_user_original)
+```
+
+```{r}
+
+grafico_popularidad <- data.frame(table(info_user_original$user_popularity))
+
+barplot(sort(grafico_popularidad$Freq, decreasing=TRUE), legend.text=grafico_popularidad$Var1, col=c('red','green','blue'))
+```
+
+
+```{r}
+
+user_estadisticas <- mongo(db="DMUBA", collection="user_original_qt_estadisticas")
+info_user_original <- user_estadisticas$find()
+summary(info_user_original)
+```
+
+```{r}
+
+grafico_popularidad <- data.frame(table(info_user_original$user_popularity))
+
+barplot(sort(grafico_popularidad$Freq, decreasing=TRUE), legend.text=grafico_popularidad$Var1, col=c('red','green','blue'))
+```
+
+
+## 

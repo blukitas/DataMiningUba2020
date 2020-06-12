@@ -1,0 +1,107 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#librerias utilizadas
+```{r}
+library(mongolite)
+library(jsonlite)
+library(sqldf)
+options(gsubfn.engine="R")
+library(wordcloud2)
+```
+
+#obtener datos de mongodb
+```{r}
+db <- mongo(collection = "retweets", db = "DMUBA")
+
+retweets = mongo(db = "DMUBA", collection = "retweets")
+
+df_retweets = retweets$find()
+
+nrow(df_retweets)
+
+```
+#Analisis para ARGENTINA
+#1-Alcance: todos los retweets que tengan Argentina en el atributo location
+#A) quien es el autor mas retweeteado?
+# obtener datos totales agrupados por el autor del tweet retweeteado
+```{r}
+
+
+stringsql1 = "select retweet_screen_name,count(*) as total from df_retweets where retweet_location like '%Argentina%' group by retweet_screen_name"
+
+autorarg = sqldf(stringsql1)
+
+
+```
+#summary y graficas para analizar los ruidos, outliers y dispersion
+#para este analisis se tienen en cuenta los outliers
+#los autores tienen como minimo un retweet y como maximo 54 retweet, la media es de un retweet, el promedio es de 2 retweet....
+
+```{r}
+summary(autorarg)
+
+plot(sort(autorarg$total))
+
+# Este plot hay que hacerlo con el logaritmo, sino al seguir la ley de los grandes numeros (Zifp) quedan una infinidad de outliers.
+boxplot(autorarg$total)
+```
+#grafico de wordcloud 
+#el autor con mas retweet es AnguitaExe
+```{r}
+wordcloud2(data=autorarg, size=0.2, color='random-dark')
+```
+
+#2) Cual es el texto del tweet mas retweeteado?
+#obtener datos
+```{r}
+stringsql2 = "select retweet_text,count(*) as total from df_retweets where retweet_location like '%Argentina%' group by retweet_text order by 2 desc"
+
+tweetarg = sqldf(stringsql2)
+
+print(tweetarg[1:1,])
+
+```
+
+#2-Alcance: todos los retweets que tengan Argentina en el atributo location y oticias en description 
+
+#1)Quien es el autor correspondiente a un medio de noticias mas retweeteado?
+#Obtener datos totales agrupados por el autor/medio de noticias del tweet retweeteado
+
+```{r}
+stringsql3 = "select retweet_screen_name,count(*) as total from df_retweets where retweet_location like '%Argentina%' and retweet_description like '%oticias%' group by retweet_screen_name"
+
+autornotarg = sqldf(stringsql3)
+
+```
+
+##summary y graficas para analizar los ruidos, outliers y dispersion
+#para este analisis se tienen en cuenta los outliers
+#los autores tienen como minimo un retweet y como maximo 29 retweet, la media es de un retweet, el promedio es de 4 retweet....
+
+```{r}
+summary(autornotarg)
+
+plot(sort(autornotarg$total))
+
+boxplot(autornotarg$total)
+```
+##grafico de wordcloud 
+#el autor correspondiente a un medio de noticias con mas retweet es todonoticias
+```{r}
+wordcloud2(data=autornotarg, size=0.3, color='random-dark')
+```
+#2) Cual es el texto del tweet del medio de noticias con mas retweeteado?
+#obtener datos
+
+```{r}
+stringsql4 = "select retweet_text,count(*) as total from df_retweets where retweet_location like '%Argentina%' and retweet_description like '%oticias%' group by retweet_text order by 2 desc"
+
+tweetnotarg = sqldf(stringsql4)
+
+print(tweetnotarg[1:1,])
+
+```
+

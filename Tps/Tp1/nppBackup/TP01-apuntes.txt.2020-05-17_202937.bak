@@ -1,0 +1,68 @@
+Todos los valores. Saber cuales hay siempre, cuales no.
+[01] "user_id"                 "status_id"               "created_at"              "screen_name"             "text"                   
+[06] "source"                  "display_text_width"      "is_quote"                "is_retweet"              "favorite_count"         
+[11] "retweet_count"           "hashtags"                "symbols"                 "urls_url"                "urls_t_co"              
+[16] "urls_expanded_url"       "media_url"               "media_t_co"              "media_expanded_url"      "media_type"             
+[21] "ext_media_url"           "ext_media_t_co"          "ext_media_expanded_url"  "mentions_user_id"        "mentions_screen_name"   
+[26] "lang"                    "quoted_created_at"       "retweet_created_at"      "geo_coords"              "coords_coords"          
+[31] "bbox_coords"             "status_url"              "name"                    "location"                "description"            
+[36] "protected"               "followers_count"         "friends_count"           "listed_count"            "statuses_count"         
+[41] "favourites_count"        "account_created_at"      "verified"                "profile_image_url"       "quote_count"            
+[46] "reply_count"             "retweet_status_id"       "retweet_text"            "retweet_source"          "retweet_favorite_count" 
+[51] "retweet_retweet_count"   "retweet_user_id"         "retweet_screen_name"     "retweet_name"            "retweet_followers_count"
+[56] "retweet_friends_count"   "retweet_statuses_count"  "retweet_location"        "retweet_description"     "retweet_verified"       
+[61] "profile_banner_url"      "profile_background_url"  "quoted_status_id"        "quoted_text"             "quoted_source"          
+[66] "quoted_favorite_count"   "quoted_retweet_count"    "quoted_user_id"          "quoted_screen_name"      "quoted_name"            
+[71] "quoted_followers_count"  "quoted_friends_count"    "quoted_statuses_count"   "quoted_location"         "quoted_description"     
+[76] "quoted_verified"         "url"                     "reply_to_user_id"        "reply_to_screen_name"    "reply_to_status_id"     
+[81] "place_url"               "place_name"              "place_full_name"         "place_type"              "country"                
+[86] "country_code"            "lat"                     "lng"                    
+
+
+# Hay un solo idioma, "Es", hay solo tweets no protegidos.
+# Hay 4 tweets con más de 140 caracteres
+(https://www.independent.co.uk/life-style/gadgets-and-tech/news/twitter-character-limit-update-tweets-expanded-140-280-english-japanese-app-a7968961.html - https://developer.twitter.com/en/docs/basics/counting-characters)
+
+# 25440 personas distintas twitteando
+# 25435 personas distintas archivo de personas
+(? Que personas no hicieron tweets? Fueron nombradas? Que personas fueron nombradas?)
+
+# 441 => screen_name == name
+# 24994 => Usando distinto
+(Porque? Hay entre estos nombres iguales alguna correlacion? es falta de interes? Puedo reducir alguna columna? Alguna del as dos es más valiosa?
+
+# Location que más aparece
+null, México, Buenos aires, Argentina, Venezuela
+(Hay forma de unificar eso? Validar eso? De hacer algo?
+
+# Mayores fuentes
+Twitter for Android - 15716.0
+Twitter for iPhone - 7049.0
+(Cuales los más usados? 
+(Caracteristicas para esos datos? Unificar algunos? 
+
+Verificado:
+28424.0 - No
+483.0 - Si
+Que hay entre lo verificado? Complementar con el nombre? Con amigos
+( usar ciertas caracteristicas y pensar outliers y bots?
+
+Cuentas verificadas y tweets
+Nubes de palabras?
+Plot ordenado de tweets por tiempo? Comparar picos con anuncios de extension de cuarentena
+Comparar tweets con contagios, con duracion de la cuarentena
+Popularidad_tweet = retweets, favs
+Popularidad_perfil = suma de retweets, favs, listas, amigos
+Estan relacionados estos perfiles? Algo tipo grafo?
+Coords y location
+
+# Tweets con retweet y favoritos
+2 que tul eso?
+
+## Dataset de datos.gov
+
+https://datos.gob.ar/dataset/salud-covid-19-determinaciones-registradas-republica-argentina
+https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina
+https://datos.gob.ar/dataset/salud-vigilancia-infecciones-respiratorias-agudas
+https://datos.gob.ar/dataset/desarrollo-social-informe-llamadas-linea-144
+

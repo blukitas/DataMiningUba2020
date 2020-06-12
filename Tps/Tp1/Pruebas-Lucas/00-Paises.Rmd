@@ -1,0 +1,516 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("highcharter")
+library("treemap")
+library("modeest")
+library("GGally")
+library("tidyverse")
+library("hrbrthemes")
+library("tidyr")
+library("VIM")
+library("e1071")
+library("mice")
+library("mongolite")
+
+library("SnowballC")
+library("tm")
+library("twitteR")
+library("syuzhet")
+
+library("tidyverse")
+library("lubridate")
+
+library("wordcloud")
+library("wordcloud2")
+library("RColorBrewer")
+```
+
+# Funciones útiles:
+
+
+```{r}
+limpiar_palabras <- function(df, palabras_filtro) {
+  corona_palabras <- c("corona", "coronavirus", "virus", "mas", "cuarentena", "pandemia", "casos")
+  # Hay que ver algo, si tiene muchas palabras de coronavirus, podría tratarse de spam, de contenido generado para llamar la atencion.
+  
+  docs <- df$text
+  docs <- gsub("http.*","",docs)
+  docs <- gsub("https.*","",docs)
+  
+  #Quitando los hashtags y usuarios en los tweets_text
+  docs <- gsub("#\\w+","",docs)
+  docs <- gsub("@\\w+","",docs)
+  
+  docs <- gsub("[[:punct:]]","",docs)
+  docs <- gsub("\\w*[0-9]+\\w*\\s*", "",docs)
+  
+  docs <- gsub("[[:punct:]]","",docs)
+  docs <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", docs)
+  docs <- iconv(docs,from="UTF-8",to="ASCII//TRANSLIT")
+  
+  docs <- Corpus(VectorSource(docs))
+  toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+  docs <- tm_map(docs, toSpace, "/")
+  docs <- tm_map(docs, toSpace, "@")
+  docs <- tm_map(docs, toSpace, "\\|")
+  # Convert the text to lower case
+  docs <- tm_map(docs, content_transformer(tolower))
+  # Remove numbers
+  docs <- tm_map(docs, removeNumbers)
+  # Remove english common stopwords
+  docs <- tm_map(docs, removeWords, stopwords("spanish"))
+  # Remove your own stop word
+  # specify your stopwords as a character vector
+  docs <- tm_map(docs, removeWords, palabras_filtro) 
+  docs <- tm_map(docs, removeWords, corona_palabras) 
+  # Remove punctuations
+  docs <- tm_map(docs, removePunctuation)
+  # Eliminate extra white spaces
+  docs <- tm_map(docs, stripWhitespace)
+  return(docs)
+}
+```
+
+
+# Paises 
+```{r}
+
+# tweets <- mongo(collection = "tweets_mongo_covid19", db = "DMUBA")
+t <- mongo(collection = "tweet_usa", db = "DMUBA")
+eeuu <- t$find()
+eeuu$pais <- "Estados Unidos"
+t <- mongo(collection = "tweet_chile", db = "DMUBA")
+chile <- t$find()
+chile$pais <- "Chile"
+t <- mongo(collection = "tweet_cuba", db = "DMUBA")
+cuba <- t$find()
+cuba$country <- ""
+cuba$pais <- "Cuba"
+t <- mongo(collection = "tweet_mx", db = "DMUBA")
+mx <- t$find()
+mx$pais <- "México"
+t <- mongo(collection = "tweet_arg", db = "DMUBA")
+arg <- t$find()
+arg$pais <- "Argentina"
+t <- mongo(collection = "tweet_vz", db = "DMUBA")
+vz <- t$find()
+vz$country <- ""
+vz$pais <- "Venezuela"
+```
+
+
+```{r}
+tweets <- rbind(eeuu, chile, cuba, mx, arg, vz)
+```
+
+```{r}
+tweets$Tipo <- ""
+tweets[tweets$is_retweet & !tweets$is_quote,]$Tipo <- "RT"
+tweets[!tweets$is_retweet & tweets$is_quote,]$Tipo <- "QT"
+tweets[tweets$is_retweet & tweets$is_quote,]$Tipo <- "QT/RT"
+tweets[!tweets$is_retweet & !tweets$is_quote,]$Tipo <- "TW"
+
+grafico_tipos <- data.frame(table(tweets_types$Tipo))
+
+# barplot(sort(grafico_tipos$Freq, decreasing=TRUE), legend.text=grafico_tipos$Var1, col=c('red','green','blue','brown'))
+ggplot(data=tweets, aes(x=Tipo, fill=Tipo)) + 
+  geom_bar() + facet_wrap(~ pais, nrow=2)
+
+```
+```{r}
+
+# png(filename="tipo_x_tweet_pais.png", width=1000, bg="white")
+ggplot(data=tweets, aes(x=Tipo, fill=Tipo)) + 
+        scale_fill_brewer(palette="Set2") +
+        geom_bar() +
+        labs(
+          title = "",
+          subtitle = "",
+          caption = "",
+          tag = ""
+          ) +
+        xlab("") +
+        ylab("") +
+        theme(plot.title = element_text(hjust = 0.5), 
+              axis.text=element_text(size=10),
+              axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+              axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+              legend.text=element_text(size=10),
+              # aspect.ratio=19/19
+              ) +
+        facet_wrap(~ pais, nrow=2)
+# dev.off()
+
+```
+
+
+```{r}
+
+tweets$verificado <- F
+tweets[tweets$tipo == "Solo QT",]$verificado <-  tweets[tweets$tipo == "Solo QT",]$quoted_verified
+tweets[tweets$tipo == "Original",]$verificado <-  tweets[tweets$tipo == "Original",]$verified
+tweets[tweets$tipo == "Solo RT",]$verificado <-  tweets[tweets$tipo == "Solo RT",]$retweet_verified
+tweets[tweets$tipo == "QT y RT",]$verificado <-  tweets[tweets$tipo == "QT y RT",]$retweet_verified
+
+tweets$verificado_grafico <- ""
+tweets[tweets$verificado,]$verificado_grafico <- "Si"
+tweets[!tweets$verificado,]$verificado_grafico <- "No"
+
+```
+
+
+```{r}
+
+ggplot(data=tweets, aes(x=verificado, fill=verificado)) + 
+  geom_bar() + facet_wrap(~ pais, nrow=2)
+
+
+# png(filename="verificado_pais.png", width=1000, bg="white")
+ggplot(data=tweets, aes(x=verificado_grafico, fill=verificado_grafico)) + 
+        scale_fill_brewer(palette="Set2") +
+        geom_bar() +
+        labs(
+          title = "",
+          subtitle = "",
+          caption = "",
+          tag = ""
+          ) +
+        xlab("") +
+        ylab("") +
+        theme(plot.title = element_text(hjust = 0.5), 
+              axis.text=element_text(size=10),
+              axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+              axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+              legend.text=element_text(size=10),
+              aspect.ratio=19/19) +
+        facet_wrap(~ pais, nrow=2)
+# dev.off()
+
+```
+```{r}
+# install.packages("webshot")
+# webshot::install_phantomjs()
+# library("htmlwidgets")
+# library("webshot")
+```
+
+
+```{r}
+# tweets[tweets$pais == 'Argentina',]$retweet_text
+tweets[tweets$pais == 'Argentina' & tweets$is_retweet,]
+
+nube_arg <- data.frame(table(tweets[tweets$pais == 'Argentina' &tweets$is_retweet,]$retweet_screen_name))
+# sort(nube_arg)
+wordcloud2(data=nube_arg[nube_arg$Freq > 2,], size=0.5, color='random-dark')
+
+# hw <- wordcloud2(demoFreq,size = 3)
+# saveWidget(hw,"1.html",selfcontained = F)
+# webshot::webshot("1.html","1.png",vwidth = 1992, vheight = 1744, delay =10)
+
+# png(filename="nube_arg.png", width=1000, bg="white")
+wordcloud(words = nube_arg[nube_arg$Freq > 2,]$Var1, freq = nube_arg[nube_arg$Freq > 2,]$Freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+
+```
+
+```{r}
+
+# tweets[tweets$pais == 'México',]$retweet_text
+tweets[tweets$pais == 'México' & tweets$is_retweet,]
+
+nube_mx <- data.frame(table(tweets[tweets$pais == 'México' &tweets$is_retweet,]$retweet_screen_name))
+# sort(nube_arg)
+wordcloud2(data=nube_mx[nube_mx$Freq > 2,], size=0.5, color='random-dark')
+
+hw <- wordcloud2(demoFreq,size = 3)
+saveWidget(hw,"mx.html",selfcontained = F)
+webshot::webshot("mx.html","mx_2.png",vwidth = 1992, vheight = 1744, delay =10)
+
+png(filename="nube_mx.png", width=1000, bg="white")
+wordcloud(words = nube_mx[nube_mx$Freq > 2,]$Var1, freq = nube_mx[nube_mx$Freq > 2,]$Freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+dev.off()
+
+```
+
+
+## Clasificar en noticias - politica - otros
+
+```{r}
+  aux <- tweets[,]  %>% select(tweet_id, retweet_description)
+  names(aux) <- c("tweet_id", "text")
+```
+
+
+```{r}
+aux$text <- tolower(aux$text)
+aux$text <- gsub("http.*","",aux$text)
+aux$text <- gsub("https.*","",aux$text)
+
+# #Quitando los hashtags y usuarios en los tweets_text
+# aux$text <- gsub("#\\w+","",aux$text)
+aux$text <- gsub("@\\w+","",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("\\w*[0-9]+\\w*\\s*", "",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", aux$text)
+aux$text <- iconv(aux$text,from="UTF-8",to="ASCII//TRANSLIT")
+  
+palabras_noticias <- c("noticia", "periodismo", "periodista", 'periodico', "news", 'journalist', "reportero", "programa de tv", 'television', 'Reuters ', 'elpaisamerica', 'productora', 'conductor', 'columnista', 'corresponsal', 'telesur')
+aux$is_news_related <- F
+for (i in palabras_noticias) {
+  aux$is_news_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_news_related)
+}
+palabras_politica <- c("politico", "senador", "diputado", "alcalde", "subsecretario", "secretario", "secretaria", "presidencia", "presidente", "ministerio", "ministro", "ministra", "público", "publico", "canciller", "Partido Socialista", "PSUV", "partido del pueblo", 'asamblea nacional')
+aux$is_politic_related <- F
+for (i in palabras_politica) {
+  aux$is_politic_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_politic_related)
+}
+```
+
+```{r}
+# barplot(tweets$is_news_related)
+# barplot(tweets$is_politic_related)
+```
+
+```{r}
+aux$tipo_user = "Normal"
+aux[aux$is_news_related,]$tipo_user <- "Medio"
+aux[aux$is_politic_related,]$tipo_user <- "Politica"
+aux$is_news_related <- NULL
+aux$is_politic_related <- NULL
+aux$text <- NULL
+
+tweets <- merge(tweets, aux, by="tweet_id")
+table(tweets$tipo_user)
+```
+
+
+```{r}
+top20users <- data.frame(nro=seq(1,20))
+
+# top20users <- data.frame(nro=seq(1,20), user=head(sort(table(tweets[tweets$pais == "Argentina" ,]$retweet_screen_name), decreasing=T), n=20), pais=rep("Argentina", each=20))
+
+for (p in unique(tweets$pais)) {
+  # if (p != "Argentina") {
+    print(p)
+    # print("Top 5 usuarios")
+    # print(head(sort(table(tweets[tweets$pais == p,]$retweet_screen_name), decreasing=T), n=20))
+    top20pais <- head(sort(table(tweets[tweets$pais == p &tweets$is_retweet,]$retweet_screen_name), decreasing=T), n=20)
+    
+    aux_p <- data.frame(nro=seq(1,20), user=top20pais)
+    names(aux_p) <- c("nro","user", "freq.")
+    # print(table(tweets[!is.na(tweets$retweet_screen_name),]))
+    aux_t <- tweets[tweets$retweet_screen_name %in% unique(aux_p$user), ] %>% select(retweet_screen_name, tipo_user) %>% group_by(retweet_screen_name) %>% summarise(tipo = max(tipo_user))
+    names(aux_t) <- c("user", "tipo")
+    
+    aux_p <- merge(aux_p, aux_t, by="user",all.x=TRUE)
+    
+    # print(names(aux_p))
+    names(aux_p) <- c(p,"nro", paste("freq.",p), paste("tipo",p))
+    # print(names(aux_p))
+    
+    top20users <- merge(top20users, aux_p, by="nro", all.x=TRUE)
+  # }
+}
+
+```
+
+```{r}
+top20users
+# tweets[tweets$retweet_screen_name == 'CiroGomezL' & tweets$is_retweet,]$retweet_description
+```
+
+<!-- 
+  Fallos: "El_pais_america, alfernandez (Presidente), 
+  Covid_19Time / Desaparecio
+  AlertaNews24: No tiene noticias
+  BrunoRguezP: canciller
+  la_patalla: dudoso, no es un medio tradicional, pero informa. (Información e Investigación. )
+  DrDuranGarcia: Director Nacional de Epidemiología del @MINSAPCuba (Border)
+  InesMChapman: Ministra
+  japortalmiranda: ministro
+  HLGatell: subscretario
+  CarlosLoret: reportero
+  FelipeCalderon: presidente
+  Secretario : subscretario
+  Milenio: Medio, pero solo dice periodismo en hashtags
+  V_TrujilloM - actor Comunicador ?
+  ConElMazoDando - Programa de TV
+  NicolasMaduro - presidente
+  WolffWaldo - en algunos dice politica en otros normal? wtf? Cambio en esos días de description.
+  guerrerocuba - en venezuela tambien
+  VTVcanal8 - Televisión
+  dsmolansky - secretaría
+  -->
+```{r}
+names(top20users)
+top20users[,c(1,2,4,5,7,8,10,11,13,14,16,17,19)]
+
+```
+
+
+
+### Word cloud - Mexico
+
+```{r}
+
+# Me deja sin memoria. Esto haría un wordcloud
+tw <- mongo(db="DMUBA", collection="tweet_mx")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("mexico", "méxico"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+
+```
+
+```{r}
+# Me deja sin memoria. Esto haría un wordcloud
+tw <- mongo(db="DMUBA", collection="tweet_cuba")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("cuba", "cubano", "cubana", "cubanos"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+```
+
+
+
+
+```{r}
+
+# Me deja sin memoria. Esto haría un wordcloud
+tw <- mongo(db="DMUBA", collection="tweet_vz")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("venezuela", "venezolano", "venezolana", "venezolanos"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+```
+
+
+```{r}
+
+# Me deja sin memoria. Esto haría un wordcloud
+tw <- mongo(db="DMUBA", collection="tweet_arg")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("argentina", "argentino", "argentina", "argentinos"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+wordcloud2(data=d[d$freq > 15,], size=0.5, color='random-dark',)
+# dev.off()
+```
+
+```{r}
+
+tw <- mongo(db="DMUBA", collection="tweet_chile")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("chile", "chileno", "chilena", "chilenos"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+```
+
+```{r}
+
+# Me deja sin memoria. Esto haría un wordcloud
+tw <- mongo(db="DMUBA", collection="tweet_usa")
+tw <- tw$find()
+
+docs <- limpiar_palabras(tw, c("eeuu", "estados unidos", "united states", "america"))
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+dtm <- TermDocumentMatrix(docs)
+# dtm <- TermDocumentMatrix(tweets_text.df2$text)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+# head(d, 10)
+
+set.seed(1234)
+# png(filename="nube-mx.png", width=1000, bg="white")
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=80, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+# dev.off()
+```
+

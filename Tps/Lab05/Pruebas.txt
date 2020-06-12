@@ -1,0 +1,4 @@
+
+  mongoimport --jsonArray --legacy --host localhost --port 27017 --collection tweets --db dolar --file "C:\Users\Lucas\Desktop\2019\Data minning\dmuba.github.io\Practicos\LAB05\tweets-dolar-Final.json"      
+  
+  

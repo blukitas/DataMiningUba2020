@@ -22,12 +22,16 @@ library("GGally")
 library("tidyverse")
 library("hrbrthemes")
 library("tidyr")
+library("VIM")
+library("e1071")
+library("mice")
+
 ```
 
 ## Leemos el txt
 
 ```{r}
-data <- read.table('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab03\\auto-mpg.data-original.txt')
+data <- read.table('C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Lab04\\auto-mpg.data-original.txt')
 ```
 
 
@@ -68,13 +72,29 @@ num_cols <- names(data)[sapply(data, is.numeric)]
 
 ### Datos nulos
 
-Hay 8 datos en MPG y6 en HorsePower
+Hay 8 datos en MPG y 6 en HorsePower
 
 ```{r}
 print(data[rowSums(is.na(data)) > 0,])
 ```
 
+Podemos ver que no hay filas con dos valores nulos.
+```{r}
+print(data[rowSums(is.na(data)) > 1,])
+```
+
+```{r}
+print(cat("Porcentaje de nulos: ", 14/406, "."))
+print(cat("    * En MPG:        ", 8/406, "."))
+print(cat("    * En Horse Power:", 6/406, "."))
+
+```
+
+Partimos de una base de porcentaje de nulos baja. Por lo que sacarlos no es una mala decisión. Igualmente compararemos distintas opciones para tratarlos, buscando la mejor opción.
+
 ### Distintos valores en algunas columnas específicas
+
+TODO: To factor en year/origin/cilindros.
 
 #### Año del modelo:
 ```{r}
@@ -91,7 +111,7 @@ unique(data$origin)
 
 #### Cantidad de cilindros:
 ```{r}
-unique(data$cylinders)
+sort(unique(data$cylinders))
 ```
 
 #### Modelos
@@ -110,6 +130,9 @@ Viendo los primeros registros, parece que hay un patrón, donde la primera palab
 ```{r}
 name.x <- data %>%
   separate(car.name, c("name1", "name2", "name3"), " ")
+```
+
+```{r}
 data$car.brand <- name.x$name1
 sort(unique(data$car.brand))
 ```
@@ -180,7 +203,267 @@ Pensando que displacement es:
 > Engine displacement is the measure of the cylinder volume swept by all of the pistons of a piston engine, excluding the combustion chambers. It is commonly used as an expression of an engine's size, and by extension as a loose indicator of the power an engine might be capable of producing and the amount of fuel it should be expected to consume. For this reason displacement is one of the measures often used in advertising, as well as regulating, motor vehicles.
 > `r tufte::quote_footer('--- Wikipedia')`
 
-Podemos pensar que si displacemente es una medida de volumen de losc ilindros, y que puede usarse como referencia del tamaño del motor, tiene sentido que existan estas correlaciones.
+Podemos pensar que si displacemente es una medida de volumen de los cilindros, y que puede usarse como referencia del tamaño del motor, tiene sentido que existan estas correlaciones.
 
-s
+## Nulos
+
+### Registros completos
+```{r}
+data_no_null <- data %>% filter(!is.na(mpg)) %>% filter(!is.na(horsepower))
+data_no_null_norm <- as.data.frame(apply(no_na_data[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+```
+
+### Sustitución por la media
+
+```{r}
+data_media <- data
+data_media$mpg[is.na(data_media$mpg)]<-mean(data_media$mpg, na.rm = TRUE)
+data_media$horsepower[is.na(data_media$horsepower)]<-mean(data_media$horsepower, na.rm = TRUE)
+
+data_media_norm <- as.data.frame(apply(data_media[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+
+print(mean(data_media$mpg, na.rm = TRUE))
+print(mean(data_media$horsepower, na.rm = TRUE))
+```
+
+### Imputación por regresiones 
+
+Lo primero a elegir fue que variable usar en la búsqueda de la función de correlación. Opté por seguir las correlaciones. En mpg: Weigth, y en HorsePower: Displacement
+
+#### Horse Power
+
+```{r}
+par(mfrow=c(1, 1))  # divide graph area in 2 columns
+scatter.smooth(x=data_regresion$horsepower, y=data_regresion$displacement, main="HP ~ displacement")  # scatterplot
+```
+
+```{r}
+
+par(mfrow=c(1, 2))  # divide graph area in 2 columns
+boxplot(data_regresion$horsepower, main="HP", sub=paste("Outlier rows: ", boxplot.stats(data_regresion$horsepower)$out))
+boxplot(data_regresion$displacement, main="displacement", sub=paste("Outlier rows: ", boxplot.stats(data_regresion$displacement)$out))
+
+
+par(mfrow=c(1, 2))  # divide graph area in 2 columns
+plot(density(no_na_data$horsepower), main="Density Plot: horsepower", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(no_na_data$mpg), 2))) 
+polygon(density(no_na_data$horsepower), col="red")
+plot(density(data_regresion$displacement), main="Density Plot: Displacement", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(data_regresion$weight), 2))) 
+polygon(density(data_regresion$displacement), col="red")
+
+```
+
+El resultado fue elegir para el modelo una combinación de displacement, weight y acceleration. Esto resulto en un r-ajustado mayor. Sin embargo, es posible dudar cuál es el punto de equilibrio entre precisión y carga de procesamiento. Por ser un dataset pequeño, y estar en un contexto educativo obté por la mayor combinación. 
+
+Cabe mencionar, esto deja latente también la posibilidad de generar un modelo demasiado ajustado al set de datos que tenemos.
+
+```{r}
+
+# Leer: http://r-statistics.co/Linear-Regression.html
+# rl_model<-lm(data_regresion$horsepower ~ data_regresion$weight, data = data_regresion) #0.70
+# rl_model<-lm(data_regresion$horsepower ~ data_regresion$displacement, data = data_regresion) #0.80
+# rl_model<-lm(data_regresion$horsepower ~ data_regresion$displacement + data_regresion$weight, data = data_regresion) #0.81
+rl_model<-lm(data_regresion$horsepower ~ data_regresion$displacement + data_regresion$weight + data_regresion$acceleration, data = data_regresion) #0.88
+
+summary(rl_model)
+```
+
+Imprimimos los coeficientes del modelo:
+
+```{r}
+print(rl_model$coefficients)
+```
+
+
+```{r}
+data_regression <- data
+
+ds <- data$displacement[is.na(data$horsepower)]
+w <- data$weight[is.na(data$horsepower)]
+ac <- data$acceleration[is.na(data$horsepower)]
+
+coef <- rl_model$coefficients
+data_regresion$horsepower[is.na(data_regresion$horsepower)] <- coef[1] + ds * coef[2] + w * coef[3] + ac * coef[4]
+
+# # Verificamos que no existen faltantes
+ sum(is.na(data_regresion$horsepower))
+```
+#### MPG
+
+```{r}
+par(mfrow=c(1, 1))  # divide graph area in 2 columns
+scatter.smooth(x=data_regresion$mpg, y=data_regresion$weight, main="HP ~ weight")  # scatterplot
+```
+
+```{r}
+par(mfrow=c(1, 2))  # divide graph area in 2 columns
+boxplot(data_regresion$horsepower, main="HP", sub=paste("Outlier rows: ", boxplot.stats(data_regresion$horsepower)$out))
+boxplot(data_regresion$weight, main="weight", sub=paste("Outlier rows: ", boxplot.stats(data_regresion$weight)$out))
+```
+
+```{r}
+par(mfrow=c(1, 2))  # divide graph area in 2 columns
+plot(density(no_na_data$horsepower), main="Density Plot: Horsepower", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(no_na_data$mpg), 2))) 
+polygon(density(no_na_data$horsepower), col="red")
+plot(density(data_regresion$weight), main="Density Plot: Weight", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(data_regresion$weight), 2))) 
+polygon(density(data_regresion$weight), col="red")
+```
+
+```{r}
+
+# rl_model<-lm(data_regresion$mpg ~ data_regresion$weight, data = data_regresion) #0.69
+# 
+# rl_model<-lm(data_regresion$mpg ~ data_regresion$displacement + data_regresion$weight + data_regresion$horsepower, data = data_regresion) #0.704
+rl_model<-lm(data_regresion$mpg ~ data_regresion$weight + data_regresion$model.year, data = data_regresion) #0.8069
+summary(rl_model)
+```
+
+```{r}
+print(rl_model$coefficients)
+```
+
+```{r}
+w <- data$weight[is.na(data$mpg)]
+y <- data$model.year[is.na(data$mpg)]
+
+coef <- rl_model$coefficients
+data_regresion$mpg[is.na(data_regresion$mpg)] <- coef[1] + w * coef[2] + y * coef[3]
+
+# # Verificamos que no existen faltantes
+ sum(is.na(data_regresion$mpg))
+ 
+```
+
+```{r}
+data_regression_norm <- as.data.frame(apply(data_regresion[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+```
+
+
+### Hot deck
+
+```{r}
+data_hdeck <- data
+df_aux <- hotdeck(data_hdeck, variable=c("mpg", "horsepower"))
+data_hdeck$mpg <- df_aux$mpg
+data_hdeck$hotdeckbool_mpg <- df_aux$mpg
+data_hdeck$horsepower <- df_aux$horsepower
+data_hdeck$hotdeckbool_hp <- df_aux$horsepower
+
+data_hdeck_norm <- as.data.frame(apply(data_hdeck[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+
+```
+
+### MICE
+
+```{r}
+md.pattern(data, rotate.names=TRUE)
+```
+
+```{r}
+imputed_Data <- mice(data, maxit = 5, m = 10, method = 'midastouch')
+table(imputed_Data$nmis)
+data_mice <- complete(imputed_Data)
+```
+
+```{r}
+summary(data_mice)
+data_mice_norm <- as.data.frame(apply(data_mice[num_cols], 2, function(x) (x - min(x))/(max(x)-min(x))))
+```
+
+
+> Another source of information is the list of logged events produced by mice(). The warning we ignored previously indicates that mice found some peculiarities in the data that need the user’s attention. The logged events form a structured report that identify problems with the data, and details which corrective actions were taken by mice(). It is a component called loggedEvents of the mids object.
+> `r tufte::quote_footer('--- https://stefvanbuuren.name/fimd/sec-toomany.html')`
+> (Section 9.1.5)
+
+Particularidades que encontró mice en el procesamiento.
+
+```{r}
+imputed_Data$loggedEvents
+```
+
+
+### Comparación 
+
+#### Boxplot generales
+
+```{r}
+boxplot(data_no_null_norm, use.cols = TRUE, title="Boxplot")
+boxplot(data_media_norm, use.cols = TRUE, title="Boxplot")
+boxplot(data_regression_norm, use.cols = TRUE, title="Boxplot")
+boxplot(data_hdeck_norm, use.cols = TRUE, title="Boxplot")
+boxplot(data_mice_norm, use.cols = TRUE, title="Boxplot")
+```
+
+#### MPG
+
+```{r}
+
+# Analisis grafico de los resultados
+plot(density(data$mpg, na.rm=TRUE), type = "l", col="red", ylab = "Original", ylim=c(0,0.05))
+lines(density(data_media$mpg, na.rm=TRUE), type = "l", col="blue")
+lines(density(data_regresion$mpg, na.rm=TRUE), type = "l", col="green")
+lines(density(data_hdeck$mpg, na.rm=TRUE), type = "l", col="yellow")
+lines(density(data_mice$mpg, na.rm=TRUE), type = "l", col="black")
+legend(40, 0.05, legend=c("Original", "Media", 'Regresión', 'Hotdeck', 'MICE'), col=c("red", "blue", 'green','yellow', "black"), lty=1, cex=0.8)
+
+```
+
+#### Horsepower
+
+```{r}
+# Analisis grafico de los resultados
+plot(density(data$horsepower, na.rm=TRUE), type = "l", col="red", ylab = "Original", ylim=c(0,0.014), xlim=c())
+lines(density(data_media$horsepower, na.rm=TRUE), type = "l", col="blue")
+lines(density(data_regression$horsepower, na.rm=TRUE), type = "l", col="green")
+lines(density(data_hdeck$horsepower, na.rm=TRUE), type = "l", col="yellow")
+lines(density(data_mice$horsepower, na.rm=TRUE), type = "l", col="black")
+legend(200, 0.01, legend=c("Original", "Media", 'Regresión', 'Hotdeck', 'MICE'), col=c("red", "blue", 'green','yellow', "black"), lty=1, cex=0.8)
+```
+
+```{r}
+data_na <- data
+data_na$mpg_media <- data_media$mpg
+data_na$mpg_regression <- data_regresion$mpg
+data_na$mpg_hdeck <- data_hdeck$mpg
+data_na$mpg_mice <- data_mice$mpg
+
+data_na[is.na(data_na$mpg),c('mpg', 'mpg_media', 'mpg_regression', 'mpg_hdeck', 'mpg_mice')]
+```
+
+```{r}
+colors <- c("Media" = "red", "Regression" = "orange", "Hotdeck" = "green", "MICE" = "brown", "MPG" = "blue")
+
+
+ggplot() +
+  geom_point(data_na, mapping = aes(x=weight, y=mpg_media, color='Media')) +
+  geom_point(data_na, mapping = aes(x=weight, y=mpg_regression, color='Regression')) +
+  geom_point(data_na, mapping = aes(x=weight, y=mpg_hdeck, color='Hotdeck')) +
+  geom_point(data_na, mapping = aes(x=weight, y=mpg_mice, color='MICE')) +
+  geom_point(data_na, mapping = aes(x=weight, y=mpg, color='MPG')) +
+  labs(title = "Weight/Mpg", x="MPG", y="(Weight)", color = "Legend") +
+    scale_color_manual(values = colors) 
+
+```
+
+
+```{r}
+data_na$horsepower_media <- data_media$horsepower
+data_na$horsepower_regression <- data_regresion$horsepower
+data_na$horsepower_hdeck <- data_hdeck$horsepower
+data_na$horsepower_mice <- data_mice$horsepower
+
+data_na[is.na(data_na$horsepower),c('horsepower', 'horsepower_media', 'horsepower_regression', 'horsepower_hdeck', 'horsepower_mice')]
+```
+
+```{r}
+colors <- c("Media" = "red", "Regression" = "orange", "Hotdeck" = "green", "MICE" = "brown", "horsepower" = "blue")
+
+ggplot() +
+  geom_point(data_na, mapping = aes(x=weight, y=horsepower_media, color='Media')) +
+  geom_point(data_na, mapping = aes(x=weight, y=horsepower_regression, color='Regression')) +
+  geom_point(data_na, mapping = aes(x=weight, y=horsepower_hdeck, color='Hotdeck')) +
+  geom_point(data_na, mapping = aes(x=weight, y=horsepower_mice, color='MICE')) +
+  geom_point(data_na, mapping = aes(x=weight, y=horsepower, color='horsepower')) +
+  labs(title = "Weight/horsepower", x="horsepower", y="(Weight)", color = "Legend") +
+    scale_color_manual(values = colors) 
+```
 

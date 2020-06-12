@@ -1,0 +1,884 @@
+---
+title: "Tp 1 - Tweets sobre covid-19"
+output: html_notebook
+---
+
+
+# Solución Tp 01
+
+Tp 1 - Tweets sobre covid-19. 
+Buscando patrones interesantes.
+
+## Librerías
+
+```{r}
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("highcharter")
+library("treemap")
+library("modeest")
+library("GGally")
+library("tidyverse")
+library("hrbrthemes")
+library("tidyr")
+library("VIM")
+library("e1071")
+library("mice")
+library("mongolite")
+
+library("SnowballC")
+library("tm")
+library("twitteR")
+library("syuzhet")
+
+library("tidyverse")
+library("lubridate")
+
+library("RColorBrewer")
+library("infotheo"); # Discretize variable
+
+```
+
+## Referencia tweets
+```{r}
+tweets <- mongo(collection = "tweets_mongo_covid19", db = "DMUBA")
+```
+
+## Nombres de columnas
+```{r}
+names(tweets$find())
+```
+
+# Tipos de tweets
+```{r}
+t <- mongo(db="DMUBA", collection="tweet_type")
+tweets_types <- t$find()
+```
+
+```{r}
+cat("Cantidades de tweets por tipo \n\n")
+cat("\t* Tweets: ", nrow(tweets_types), "\n")
+cat("\t* Solo RT: ", nrow(tweets_types[tweets_types$is_retweet & !tweets_types$is_quote,]), "\n")
+cat("\t* Solo QT: ", nrow(tweets_types[!tweets_types$is_retweet & tweets_types$is_quote,]), "\n")
+cat("\t* RT y QT: ", nrow(tweets_types[tweets_types$is_retweet & tweets_types$is_quote,]), "\n")
+cat("\t* TW originales: ", nrow(tweets_types[!tweets_types$is_retweet & !tweets_types$is_quote,]), "\n")
+
+```
+
+```{r}
+tweets_types$tipo <- ""
+tweets_types[tweets_types$is_retweet & !tweets_types$is_quote,]$tipo <- "Solo RT"
+tweets_types[!tweets_types$is_retweet & tweets_types$is_quote,]$tipo <- "Solo QT"
+tweets_types[tweets_types$is_retweet & tweets_types$is_quote,]$tipo <- "RQ y RT"
+tweets_types[!tweets_types$is_retweet & !tweets_types$is_quote,]$tipo <- "Original"
+```
+
+
+```{r}
+# names = c('Solo RT', 'Solo QT', 'RT + QT', 'Original')
+# cantidades = c(nrow(tweets_types[tweets_types$is_retweet & !tweets_types$is_quote,]),
+#                nrow(tweets_types[!tweets_types$is_retweet & tweets_types$is_quote,]),
+#                nrow(tweets_types[tweets_types$is_retweet & tweets_types$is_quote,]),
+#                nrow(tweets_types[!tweets_types$is_retweet & !tweets_types$is_quote,])
+#               )
+#                
+grafico_tipos <- data.frame(table(tweets_types$tipo))
+
+# barplot(sort(grafico_tipos$Freq, decreasing=TRUE), legend.text=grafico_tipos$Var1, col=c('red','green','blue','brown'))
+# barplot(height=sort(grafico_tipos$Freq, decreasing=TRUE), names=grafico_tipos$Var1, col=rgb(0.2,0.4,0.6,0.6) )
+
+names(grafico_tipos) <- c("Tipos", "Cantidad")
+
+coul <- brewer.pal(5, "Set2") 
+barplot(height=sort(grafico_tipos$Cantidad, decreasing=TRUE), names=grafico_tipos$Tipos, col=coul )
+
+```
+```{r}
+
+# coul <- brewer.pal(5, "Set2") 
+
+# png(filename="tipo_tweet.png", width=1000, bg="white")
+ggplot(grafico_tipos, aes(x=reorder(Tipos, Cantidad), y=Cantidad, fill=Tipos)) + 
+    geom_bar(stat="identity") +
+    scale_fill_brewer(palette="Set2") +
+    labs(
+      title = "",
+      subtitle = "",
+      caption = "",
+      tag = ""
+      ) +
+    xlab("") +
+    ylab("") +
+    theme(plot.title = element_text(hjust = 0.5), 
+          axis.text=element_text(size=12),
+          axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+          legend.text=element_text(size=12)) +
+    coord_flip()
+# dev.off()
+```
+
+### % de Verificados según tipo de tweet
+```{r}
+
+tweets <- mongo(db="DMUBA", collection="tweet_completo_estadisticas")
+numericos <- tweets$find()
+
+# Tipos
+numericos$Tipo <- ""
+numericos[numericos$is_retweet & !numericos$is_quote,]$Tipo <- "Solo RT"
+numericos[!numericos$is_retweet & numericos$is_quote,]$Tipo <- "Solo QT"
+numericos[numericos$is_retweet & numericos$is_quote,]$Tipo <- "QT y RT"
+numericos[!numericos$is_retweet & !numericos$is_quote,]$Tipo <- "Original"
+
+numericos$verificado <- F
+numericos[numericos$Tipo == "Solo QT",]$verificado <-  numericos[numericos$Tipo == "Solo QT",]$quoted_verified
+numericos[numericos$Tipo == "Original",]$verificado <-  numericos[numericos$Tipo == "Original",]$verified
+numericos[numericos$Tipo == "Solo RT",]$verificado <-  numericos[numericos$Tipo == "Solo RT",]$retweet_verified
+numericos[numericos$Tipo == "QT y RT",]$verificado <-  numericos[numericos$Tipo == "QT y RT",]$retweet_verified
+
+numericos$verificado_grafico <- ""
+numericos[numericos$verificado,]$verificado_grafico <- "Si"
+numericos[!numericos$verificado,]$verificado_grafico <- "No"
+
+```
+
+```{r}
+
+# png(filename="tipo_x_tweet_grid2.png", width=1000, bg="white")
+ggplot(data=numericos, aes(x=verificado_grafico, fill=Tipo)) + 
+        scale_fill_brewer(palette="Set2") +
+        geom_bar() +
+        labs(
+          title = "",
+          subtitle = "",
+          caption = "",
+          tag = ""
+          ) +
+        xlab("") +
+        ylab("") +
+        theme(plot.title = element_text(hjust = 0.5), 
+              axis.text=element_text(size=10),
+              axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+              axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+              legend.text=element_text(size=10),
+              aspect.ratio=19/19) +
+        facet_wrap(~ Tipo, nrow=2)
+# dev.off()
+```
+
+
+```{r}
+ggplot(data=tweets_types, aes(x=verified, fill=tipo)) + 
+  geom_bar() + facet_wrap(~ tipo, nrow=2)
+```
+
+Hay más usuarios verificados en el contenido nuevo. A su vez, hay más verificos en el contenido citado. Eso habla de que un usuario verificado crea un contenido de mayor calidad (Más difundido y novedoso).
+
+Mientras que el usuario difusor y los retweets, si bien aumentan el alcance de los tweets, no tienen una calidad alta. 
+
+## Tweets según tiempo
+
+```{r}
+t <- mongo(db="DMUBA", collection="fechas")
+tweets_fechas <- t$find()
+```
+
+```{r}
+summary(tweets_fecha)
+```
+
+
+En un primer intento de graficar, vemos que los datos estan distribuidos de una forma particular. La primera pregunta es ¿Hay alguna fecha que presentó una cantidad anómala de datos?
+
+El 2 de mayo lo es. Sin embargo, no fue un día en el que aconteció alguna cosa. Ni es feriado (1/5), ni fue día de anuncios (25/4).
+
+```{r}
+# plot(tweets_fecha$fecha)
+# barplot(table(as.Date(tweets_fecha$fecha)))
+f<- data.frame(table(as.Date(tweets_fecha$fecha)))
+ggplot(data=f, aes(x=Freq)) + 
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+    ggtitle("Bin size = 3") +
+    theme_ipsum() +
+    theme(
+      plot.title = element_text(size=15)
+    )
+```
+
+Agrupando en fracciones menos, 5 minutos, vemos que lo que aconteció fue una ventana de captura de datos desigual. Al reducir la ventana de tiempo, vemos que hay una distribución más uniforme. Igualmente sigue planteandose la pregunta, podríamos analizarlo de a minutos, o con diferencias porcentuales, para ver si realmente hya algo ahí.
+
+```{r}
+tweets_fecha$t <- ymd_hms(tweets_fecha$fecha)
+tweets_fecha$tc <- cut(tweets_fecha$t, breaks = "5 min")  
+cant_5_min <- count(tweets_fecha, tc)
+barplot(cant_5_min$n, legend.text=cant_5_min$tc)
+## Tweets por fecha
+tweets_fecha$t <- ymd_hms(tweets_fecha$fecha)
+
+# Por minuto está más equilibrado)
+tweets_fecha$tc <- cut(tweets_fecha$t, breaks = "1 min")  
+cant_5_min <- count(tweets_fecha, tc)
+barplot(cant_5_min$n)
+```
+La variable temporal parece ser arbitraria. 
+
+Algo a seguir investigando es la ventana temporal entre:
+  * Fecha creada y fecha de creacion del retweet
+  * Fecha creada y fecha de creacion del quoted
+  
+  
+```{r}
+library(ggplot2)
+library(dplyr)
+library("plotly")
+library(hrbrthemes)
+# tweets_fecha$fecha
+tweets_fecha$fecha_str <-  lapply(tweets_fecha$tc, as.character)
+b <- as.POSIXlt(strptime(tweets_fecha$tc, format = "%H:%M:%S"))
+cant_5_min$fecha <- as.Date(cant_5_min$tc)
+cant_5_min$hora <-  format(strptime(cant_5_min$tc, format = "%Y-%m-%d %H:%M:%S"), format="%H:%M:%S")
+
+p <- cant_5_min %>%
+  ggplot( aes(x=reorder(hora, hora), y=n, fill=n)) + 
+    geom_bar(stat="identity") +
+    scale_fill_gradient2(low='red', mid='snow3', high='darkgreen', space='Lab') +
+        labs(
+          title = "",
+          subtitle = "",
+          caption = "",
+          tag = ""
+          ) +
+        xlab("") +
+        ylab("") +
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+    facet_wrap(~ fecha, nrow=4)
+
+png(filename="tipo_x_tweet.png", width=1000, bg="white")
+p
+dev.off()
+
+# Turn it interactive with ggplotly
+p <- ggplotly(p)
+p
+```
+
+
+## Texto
+
+```{r}
+tweets_text <- tweets$aggregate('[{
+            "$project": { 
+                "_id": "$_id",
+                "text": "$text"
+            }
+        }
+    ]')
+# summary(tweets_text)
+# # tweets_text$cantChars <- nchar(tweets_text$text)
+# summary(tweets_text)
+# Por hay un tweet de 900 char? será por url o cosas así?
+boxplot(tweets_text$cantChars)
+```
+
+```{r}
+ggplot(tweets_text, aes(x=cantChars)) +
+  geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  ggtitle("Cantidad de catacteres por tweet") +
+  theme_ipsum()
+```
+### Menos user y links references
+
+```{r}
+tweets_text.df2 <- tweets_text
+tweets_text.df2$text <- gsub("http.*","",tweets_text.df2$text)
+tweets_text.df2$text <- gsub("https.*","",tweets_text.df2$text)
+
+#Quitando los hashtags y usuarios en los tweets_text
+tweets_text.df2$text <- gsub("#\\w+","",tweets_text.df2$text)
+tweets_text.df2$text <- gsub("@\\w+","",tweets_text.df2$text)
+
+tweets_text.df2$cantChars <- nchar(tweets_text.df2$text)
+ggplot(tweets_text.df2, aes(x=cantChars)) +
+  geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  ggtitle("Cantidad de catacteres por tweet") +
+  theme_ipsum()
+```
+
+### Menos numeros y simbolos
+
+```{r}
+
+tweets_text.df2$text <- gsub("[[:punct:]]","",tweets_text.df2$text)
+tweets_text.df2$text <- gsub("\\w*[0-9]+\\w*\\s*", "",tweets_text.df2$text)
+tweets_text.df2$cantChars <- nchar(tweets_text.df2$text)
+ggplot(tweets_text.df2, aes(x=cantChars)) +
+  geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  ggtitle("Sin caracteres especiales y numeros") +
+  theme_ipsum()
+
+```
+
+# Hashtags
+
+## Cantidad de nulos
+```{r}
+tweets_hashes_null <- tweets$find('{"hashtags":{"$elemMatch":{"$in":[null], "$exists":true}}}')
+print(nrow(tweets_hashes))
+```
+
+## Preprocesamiento
+```{r}
+tweets_count <- mongo(db='DMUBA', collection='tweet_count_hashtags')
+tweets_count <- tweets_count$find()
+tweets_count$hashtag_2 <- gsub("[[:punct:]]","",tweets_count$hashtag);
+tweets_count$hashtag_2 <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", tweets_count$hashtag_2);
+tweets_count$hashtag_2 <- iconv(tweets_count$hashtag_2,from="UTF-8",to="ASCII//TRANSLIT");
+tweets_count$is_cuarentena_related <- F
+for (i in cuarentena_words) {
+  tweets_count$is_cuarentena_related <- ifelse(grepl(i, tweets_count$hashtag_2, fixed= T), T, tweets_count$is_cuarentena_related)
+}
+tweets_count$is_sex_related <- F
+for (i in sex_words) {
+  tweets_count$is_sex_related <- ifelse(grepl(i, tweets_count$hashtag_2, fixed= T), T, tweets_count$is_sex_related)
+}
+```
+
+Top 20 de hashtags no relacionados a cuarentena
+```{r}
+head(tweets_count[!tweets_count$is_cuarentena_related & !tweets_count$is_sex_related,] %>% select(2:3), n=20)
+
+```
+
+
+Algo que me llamo la atencion: 
+* Cuba
+* México, bartlett (Ministro mexicano), snte (sindicato de profesores).
+* Venezuela, proteccionyaccion
+* AFP, tenía una doble implicación fondo de pensión o agencia de prensa francesa. La primera idea de un fondo de pensiones que pudiese usarse como fondo de emergencia y que generaba polémica era interesante como reaccion al covid. Sin embargo haciendo una segunda búsqueda apartir del campo texto, vemos que un hashtag con repercusión ambigua, toca ambos temas y además fondos de pensión de otros países. Por lo que entrar en el significa mucho tiempo y poca información específica. 
+
+
+TODO: 
+* Hay algo con posibilidad de ser profundizado, que es porque de cada uno, que impacto, quienes lo generaron, que influencia, fueron trending topic, cuantos días? 
+* Argentina vs el resto (Cuba, Mexico, Chile).
+* Tienen que ver estos hashtags con los trending topic? mismo siendo random, llegamos a obtener parte de esa representatividad de los trending topics?
+
+# Perfils de Usuarios:
+
+```{r}
+user_estadisticas <- mongo(db="DMUBA", collection="user_estadisticas")
+summary(info_user)
+# User base
+info_user <- user_estadisticas$find()
+# Con log sin los que tiene 0
+data_log <- as.data.frame(apply(info_user[,5:9], 2, log))
+# Log con los que tiene 0
+info_user[info_user == 0] <- 0.00001
+data_log_1 <- as.data.frame(apply(info_user[,5:9], 2, log))
+
+cat("Cantidad de usuarios que han twitteado: ", nrow(info_user))
+```
+
+```{r}
+
+# ggpairs(data_log)
+# ggpairs(info_user[,1:5])
+
+boxplot(info_user[,5:9])
+
+# Con 0's
+boxplot(data_log)
+# Con 0.0000001's
+boxplot(data_log_1)
+
+# 
+# info_user$verificado <- ifelse(info_user$verified, "Verificados", "Sin verificar")
+# info_user$verificado <- as.factor(info_user$verificado)
+
+```
+
+Todo: 
+* Juntar usuarios finales, usuarios que fueron replicados
+* Que hace que un usuario sea más divulgado? Hay alguna medida de relevancia de un usuario? Aquellos más populares (Segun que criterio?) son de que tipo? Instituciones, usuarios comunes, bots? Que tan activos son? Influye eso? Desde que dispositivo lo hacen? Que tipo de texto crean? Que hashtags usan? 
+De que regiones son? Hay algo interesante ahí? Hay predominio de algun pais? Hay paises donde se usa más el twitter? 
+
+
+# Tipos de usuarios:
+
+```{r}
+
+user_tweets_estadisticas <- mongo(db="DMUBA", collection="user_tweets_estadisticas")
+# User base
+info_user <- user_tweets_estadisticas$find()
+summary(info_user$is_none)
+
+
+info_user[info_user == 0] <- 0.00001
+data_log_1 <- as.data.frame(apply(info_user[,3:7], 2, log))
+# Plot de grupos
+
+plot(sort(data_log_1$is_rt))
+plot(sort(data_log_1$is_only_rt))
+plot(sort(data_log_1$is_only_qt))
+plot(sort(data_log_1$is_none))
+plot(sort(data_log_1$is_qt))
+
+```
+
+TODO: Binning con esto? Alinear distintos grupos en cada categoria? Solo clasificarlos?
+
+
+## Usuarios con más tweets
+
+```{r}
+head(info_user[order(info_user$count, decreasing = T),])
+```
+
+Curiosamente, los usuarios finales con más tweets son creadores. serán bots?
+
+## Categorizar
+
+```{r}
+info_user$tipo <- ifelse(info_user$is_none > info_user$is_only_rt + info_user$is_only_rt, "Creador", "Difusor")
+```
+
+```{r}
+barplot(table(info_user$tipo))
+info_user_graf <- data.frame(table(info_user$tipo))
+names(info_user_graf) <- c("Tipo_usuario", "Cantidad")
+
+# png(filename="tipo_usuario_creacion.png", width=1000, bg="white")
+ggplot(info_user_graf, aes(x=reorder(Tipo_usuario , Cantidad), y=Cantidad, fill=Tipo_usuario)) + 
+    geom_bar(stat="identity") +
+    scale_fill_brewer(palette="Set2") +
+    labs(
+      title = "",
+      subtitle = "",
+      caption = "",
+      tag = ""
+      ) +
+    xlab("") +
+    ylab("") +
+    theme(plot.title = element_text(hjust = 0.5), 
+          axis.text=element_text(size=14),
+          axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+              legend.text=element_text(size=14),
+    # theme(plot.title = element_text(hjust = 0.5), 
+    #       axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10))
+          ) +
+    coord_flip()
+# dev.off()
+```
+
+### Usuarios según popularidad
+
+```{r}
+user_estadisticas <- mongo(db="DMUBA", collection="user_estadisticas")
+info_user <- user_estadisticas$find()
+
+data_log <- as.data.frame(apply(info_user[,5:9], 2, log10))
+info_user[info_user == 0] <- 0.00001
+info_user[is.na(info_user)] <- 0.0001
+data_log_1 <- as.data.frame(apply(info_user[,5:9], 2, log10))
+
+```
+
+Correllations
+```{r}
+ggpairs(data_log_1)
+```
+
+
+```{r}
+
+bin_eq_freq <- discretize(data_log_1$followers_count,"equalfreq", 20)
+bin_eq_freq$followers_count = data_log_1$followers_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$followers_count[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$followers_count) , type = "p", col="red", 
+     ylab = "followers_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+
+bin_eq_freq <- discretize(data_log_1$listed_count,"equalfreq", 20)
+bin_eq_freq$listed_count = data_log_1$listed_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:20){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$listed_count[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$listed_count) , type = "p", col="red", 
+     ylab = "listed_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+### Usuarios según actividad
+
+```{r}
+# no_na_data <- data_log_1[!is.na(data_log_1$statuses_count),]
+bin_eq_freq <- discretize(data_log_1$statuses_count,"equalwidth", 5)
+bin_eq_freq$statuses_count = data_log_1$statuses_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:5){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$statuses_count[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$statuses_count) , type = "p", col="red", 
+     ylab = "statuses_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+```
+
+```{r}
+
+# no_na_data <- data_log_1[!is.na(data_log_1$favourites_count),]
+bin_eq_freq <- discretize(data_log_1$favourites_count,"equalwidth", 10)
+bin_eq_freq$favourites_count = data_log_1$favourites_count
+
+# Por cada bin calculamos la media y reemplazamos en el atributo suavizado
+for(bin in 1:10){
+  bin_eq_freq$suavizado[ bin_eq_freq$X==bin] = mean(bin_eq_freq$favourites_count[ bin_eq_freq$X==bin])
+}
+
+# grafico Sepal.Width ordenado de menor a mayor
+plot(sort(data_log_1$favourites_count) , type = "p", col="red", 
+     ylab = "favourites_count", xlab = "Observaciones", main = "Dato original vs suavizado")
+# Agrego la serie de la variable media 
+lines(sort(bin_eq_freq$suavizado),
+      type = "p", col="blue")
+legend("topleft", legend=c("Original", "Suavizado"), col=c("red", "blue"), lty=1)
+
+```
+
+
+
+TODO: 
+* Dentro de los creadores, alguno fue retweteado? Citado? Cual es el impacto de los creadores?
+* Dentro de los difusores, que impacto tienen? Que relevancia tienen los creadores originales? Cuando tweets fueron amplificados más de una vez en el grupo de twitteros finales?
+* Es muy simplista esto? Funciona? Hay dispositivos privilegiados? Usan software para publicaciones los creadores? Los difusores?
+* Entre los creadores, hay verificados? Hay alguna forma de evaluar la confiabilidad o la veracidad de lo que dicen?
+* Entre los difusores, hay fake news? Hay difusion indiscriminada? Hay relacion entre algun par de usuarios? Hay alguna persona que tiene más difusion que otra?
+s
+
+
+# Paises
+
+```{r}
+
+tweets <- mongo(collection = "tweets_lower", db = "DMUBA")
+
+df_location <- tweets$aggregate('[{
+            "$project": { 
+                "_id": "$_id",
+                "location": "$location",
+                "retweet_location": "$retweet_location",
+                "quoted_location": "$quoted_location",
+                "country_code": "$country_code",
+                "country": "$country",
+                "lat": "$lat",
+                "lng": "$lng"
+            }
+        }
+    ]')
+```
+
+```{r}
+nombre_location <- c("location", "retweet", "quoted", "country_code", "country", "lat", "lng")
+cant_unique <- c( length(unique(df_location$location))
+                  ,length(unique(df_location$retweet_location))
+                  ,length(unique(df_location$quoted_location))
+                  ,length(unique(df_location$country_code))
+                  ,length(unique(df_location$country))
+                  ,length(unique(df_location$lat))
+                  ,length(unique(df_location$lng)))
+cant_na <- c( nrow(df_location[is.na(df_location$location),])
+              , nrow(df_location[is.na(df_location$retweet_location),])
+              , nrow(df_location[is.na(df_location$quoted_location),])
+              , nrow(df_location[is.na(df_location$country_code),])
+              , nrow(df_location[is.na(df_location$country),])
+              , nrow(df_location[is.na(df_location$lat),])
+              , nrow(df_location[is.na(df_location$lng),])
+)
+df <- do.call(rbind, Map(data.frame, A=nombre_location, B=cant_unique, C=cant_na))
+names(df)[1] <- "Atributo"
+names(df)[2] <- "Unique"
+names(df)[3] <- "Na"
+
+df$porcentaje_na <- df$Na / nrow(df_location) * 100
+```
+
+```{r}
+
+png(filename="location_porc_na.png", width=1000, bg="white")
+ggplot(df, aes(x=reorder(Atributo, porcentaje_na), y=porcentaje_na, fill=Atributo)) + 
+  geom_bar(stat="identity") +
+  scale_fill_brewer(palette="Set2") +
+  labs(
+    title = "",
+    subtitle = "",
+    caption = "",
+    tag = ""
+  ) +
+  xlab("") +
+  ylab("") +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.text=element_text(size=14),
+        axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+        legend.text=element_text(size=14),
+        aspect.ratio = 1/1
+  ) +
+  coord_flip()
+dev.off()
+
+```
+
+```{r}
+
+paises_en <- read.csv("C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Tp1\\countries.en.csv", header = T, sep = ';')
+paises_es <- read.csv("C:\\Users\\Lucas\\Desktop\\2019\\Data minning\\DataMiningUba2020\\Tps\\Tp1\\countries.es.csv", header = T, sep = ';')
+
+```
+
+```{r}
+
+head(paises_en)
+head(paises_es)
+paises_es$Pais <- trimws(paises_es$Pais, which = "both")
+paises_es$Codigo <- trimws(paises_es$Codigo, which = "both")
+paises_es$Region <- trimws(paises_es$Region, which = "both")
+paises_es$Continente <- trimws(paises_es$Continente, which = "both")
+df_location$country_2 <- df_location$country
+df_location$country_code_2 <- df_location$country_code
+
+```
+
+```{r}
+for(i in paises_en$NAME){
+  print(i)
+  df_location$country_2 <- ifelse(grepl(tolower(i), tolower(df_location$location), fixed= T), tolower(i), df_location$country_2)
+}
+
+
+for(i in paises_en$NAME){
+  print(i)
+  if (nrow(df_location[!is.na(df_location$country_2) & df_location$country_2 == tolower(i),]) > 0) {
+    # df_location$country_code_2[!is.na(df_location$country_2) & df_location$country_2 == tolower('spain')] <- as.character.factor(paises_en$ISO[paises_en$NAME == 'SPAIN'])
+    # df_location$country_code_2[!is.na(df_location$country_2) & df_location$country_2 == tolower(i)] <- as.character.factor(paises_en$ISO[paises_en$NAME == i])
+    df_location[!is.na(df_location$country_2) & df_location$country_2 == tolower(i),]$country_code_2 <- paises_en$ISO[paises_en$NAME == i]
+  }
+}
+```
+
+
+```{r}
+for(i in paises_es$Pais){
+  print(i)
+  # ifelse(grepl("Argentina", df_location$location, fixed= T), "Argentina", "")
+  df_location$country_2 <- ifelse(grepl(tolower(i), tolower(df_location$location), fixed= T), tolower(i), df_location$country_2)
+}
+
+for(i in paises_es$Pais){
+  print(i)
+  if (nrow(df_location[!is.na(df_location$country_2) & df_location$country_2 == tolower(i),]) > 0) {
+    # df_location$country_code_2[!is.na(df_location$country_2) & df_location$country_2 == tolower('spain')] <- as.character.factor(paises_en$ISO[paises_en$NAME == 'SPAIN'])
+    # df_location$country_code_2[!is.na(df_location$country_2) & df_location$country_2 == tolower(i)] <- as.character.factor(paises_en$ISO[paises_en$NAME == i])
+    df_location[!is.na(df_location$country_2) & df_location$country_2 == tolower(i),]$country_code_2 <- paises_es$Codigo[paises_es$Pais == i]
+  }
+  # df_location$country_code_2[!is.na(df_location$country_2) & df_location$country_2 == tolower(i)] <- as.character.factor(paises_es$Codigo[paises_es$Pais == i])
+}
+```
+
+#Unimos continente
+```{r}
+
+for(i in paises_es$Codigo){
+  print(i)
+  df_location$Region[!is.na(df_location$country_code_2) & df_location$country_code_2 == i] <- paises_es$Region[paises_es$Codigo == i]
+  df_location$Continente[!is.na(df_location$country_code_2) & df_location$country_code_2 == i] <- paises_es$Continente[paises_es$Codigo == i]
+}
+```
+
+```{r}
+
+
+aux <- data.frame(table(df_location$Continente))
+names(aux) <- c("Continente", "Frecuencia")
+aux
+png(filename="location_porc_na.png", width=1000, bg="white")
+  ggplot(aux, aes(x=reorder(Continente, Frecuencia), y=Frecuencia, fill=Continente)) + 
+    geom_bar(stat="identity") +
+    scale_fill_brewer(palette="Set2") +
+    labs(
+      title = "",
+      subtitle = "",
+      caption = "",
+      tag = ""
+    ) +
+    xlab("") +
+    ylab("") +
+    theme(plot.title = element_text(hjust = 0.5), 
+          axis.text=element_text(size=14),
+          axis.text.y = element_text( margin = margin(10, 10, 10, 10)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 10, b = 10, l = 10)),
+          legend.text=element_text(size=14),
+          aspect.ratio = 1/1
+    ) +
+    coord_flip()
+dev.off()
+```
+
+
+## Clasificar en noticias - politica - otros
+
+```{r}
+
+t <- mongo(collection = "tweets_lower", db = "DMUBA")
+aux <- t$aggregate('[{"$project":{"_id": "$_id","user_id":"$user_id","screen_name":"$screen_name","text":"$description"}}]')
+```
+
+```{r}
+aux$text <- tolower(aux$text)
+aux$text <- gsub("http.*","",aux$text)
+aux$text <- gsub("https.*","",aux$text)
+
+# #Quitando los hashtags y usuarios en los tweets_text
+# aux$text <- gsub("#\\w+","",aux$text)
+aux$text <- gsub("@\\w+","",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("\\w*[0-9]+\\w*\\s*", "",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", aux$text)
+aux$text <- iconv(aux$text,from="UTF-8",to="ASCII//TRANSLIT")
+  
+palabras_noticias <- c("noticia", "periodismo", "periodista", 'periodico', "news", 'journalist', "reportero", "programa de tv", 'television', 'Reuters ', 'elpaisamerica', 'productora', 'conductor', 'columnista', 'corresponsal', 'telesur')
+aux$is_news_related <- F
+for (i in palabras_noticias) {
+  aux$is_news_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_news_related)
+}
+palabras_politica <- c("politico", "senador", "diputado", "alcalde", "subsecretario", "secretario", "secretaria", "presidencia", "presidente", "ministerio", "ministro", "ministra", "público", "publico", "canciller", "Partido Socialista", "PSUV", "partido del pueblo", 'asamblea nacional')
+aux$is_politic_related <- F
+for (i in palabras_politica) {
+  aux$is_politic_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_politic_related)
+}
+```
+
+```{r}
+# barplot(tweets$is_news_related)
+# barplot(tweets$is_politic_related)
+```
+
+```{r}
+aux$tipo_user = "Normal"
+aux[aux$is_news_related,]$tipo_user <- "Medio"
+aux[aux$is_politic_related,]$tipo_user <- "Politica"
+aux$is_news_related <- NULL
+aux$is_politic_related <- NULL
+aux$text <- NULL
+
+aux[aux$tipo_user=='Politica',]
+# tweets <- merge(tweets, aux, by="tweet_id")
+aux %>% group_by(screen_name) %>% summarise(tipo = max(tipo_user))
+# table(aux$tipo_user)
+```
+
+
+```{r}
+user <- aux %>% select('_id', 'user_id', 'screen_name', 'tipo_user')
+```
+
+
+
+```{r}
+aux <- t$aggregate('[{"$project":{"_id":"$_id","user_id":"$retweet_user_id","screen_name":"$retweet_screen_name","text":"$retweet_description"}}]')
+aux <- aux[!is.na(aux$screen_name),]
+```
+
+```{r}
+aux$text <- tolower(aux$text)
+aux$text <- gsub("http.*","",aux$text)
+aux$text <- gsub("https.*","",aux$text)
+
+# #Quitando los hashtags y usuarios en los tweets_text
+# aux$text <- gsub("#\\w+","",aux$text)
+aux$text <- gsub("@\\w+","",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("\\w*[0-9]+\\w*\\s*", "",aux$text)
+
+aux$text <- gsub("[[:punct:]]","",aux$text)
+aux$text <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", aux$text)
+aux$text <- iconv(aux$text,from="UTF-8",to="ASCII//TRANSLIT")
+  
+palabras_noticias <- c("noticia", "periodismo", "periodista", 'periodico', "news", 'journalist', "reportero", "programa de tv", 'television', 'Reuters ', 'elpaisamerica', 'productora', 'conductor', 'columnista', 'corresponsal', 'telesur')
+aux$is_news_related <- F
+for (i in palabras_noticias) {
+  aux$is_news_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_news_related)
+}
+palabras_politica <- c("politico", "senador", "diputado", "alcalde", "subsecretario", "secretario", "secretaria", "presidencia", "presidente", "ministerio", "ministro", "ministra", "público", "publico", "canciller", "Partido Socialista", "PSUV", "partido del pueblo", 'asamblea nacional')
+aux$is_politic_related <- F
+for (i in palabras_politica) {
+  aux$is_politic_related <- ifelse(grepl(i, aux$text, fixed= T), T, aux$is_politic_related)
+}
+```
+
+```{r}
+# barplot(tweets$is_news_related)
+# barplot(tweets$is_politic_related)
+```
+
+```{r}
+aux$tipo_user = "Normal"
+aux[aux$is_news_related,]$tipo_user <- "Medio"
+aux[aux$is_politic_related,]$tipo_user <- "Politica"
+aux$is_news_related <- NULL
+aux$is_politic_related <- NULL
+aux$text <- NULL
+
+aux[aux$tipo_user=='Politica',]
+# tweets <- merge(tweets, aux, by="tweet_id")
+aux %>% group_by(screen_name) %>% summarise(tipo = max(tipo_user))
+# table(aux$tipo_user)
+
+```
+
+
+
+```{r}
+names(user) <- c("_id", "user_id", "screen_name", "tipo_user")
+names(aux) <- c("_id", "user_id", "screen_name", "tipo_user")
+user <- rbind(user, aux)
+```
+
+
+
+

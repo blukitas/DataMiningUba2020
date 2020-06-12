@@ -1,0 +1,71 @@
+
+* Pasar a minusculas: 
+	* Name
+	* Screen_name
+	* Description
+	* Text
+	* Hashtags
+	* Source
+	* country
+	* retweet_location
+	* location
+	* quoted_location
+	* country_code
+(Archivo 01-cambios)
+
+
+* Vistas:
+	< Tipo tweets
+	< Fechas
+	< Users estadísticas: 
+		* statuses_count
+		* favourites_count
+		* listed_count
+		* friends_count
+		* followers_count
+		* verified
+	< Tweet numeros:
+		* favorite_count
+		* quote_count
+		* retweet_count
+		* reply_count
+	< Tweets originales:	
+		* quoted_favorite_count
+		* quoted_retweet_count
+		* retweet_favorite_count
+		* retweet_retweet_count
+		* retweet_verified
+		* quoted_verified
+	< Tweets numeros c/originales:
+		* favorite_count
+		* quote_count
+		* retweet_count
+		* reply_count
+		* quoted_favorite_count
+		* quoted_retweet_count
+		* retweet_favorite_count
+		* retweet_retweet_count
+	* User original
+		* quoted_description
+		* quoted_name
+		* quoted_screen_name
+		* quoted_source
+		* retweet_description
+		* retweet_name
+		* retweet_screen_name
+		* retweet_source
+	< User original estadísticas
+		* retweet_user_id
+		* quoted_user_id
+		* quoted_followers_count
+		* quoted_friends_count
+		* quoted_statuses_count
+		* retweet_followers_count
+		* retweet_friends_count
+		* retweet_statuses_count
+
+
+	* Info completa de quotes
+	* Info completa de retweet	
+	* Users citados/rt que no están acá?
+(Archivo 02-vistas)
