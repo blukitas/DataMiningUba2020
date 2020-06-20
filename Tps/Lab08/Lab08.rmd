@@ -96,3 +96,15 @@ nrow(titanic.raw[Class=='1st' & Survived=='No',])/nrow(titanic.raw[Class=='1st',
 print(nrow(titanic.raw[Age=='Adult' & Sex=='Female' & Survived=='Yes',])/nrow(titanic.raw[Age=='Adult' & Sex=='Female',]))
 print(nrow(titanic.raw[Age=='Adult' & Sex=='Male' & Survived=='No',])/nrow(titanic.raw[Age=='Adult' & Sex=='Male',]))
 ```
+
+
+## Otra formita
+```{r}
+library('tidyverse')
+```
+
+```{r}
+nRows = nrow(titanic.raw)
+titanic.raw %>% group_by('Class', 'Sex') %>% summarise(support=n() / nRows, support_count=n()) %>% inner_join()
+```
+
